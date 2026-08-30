@@ -1,4 +1,4 @@
-# EventHandling.PRD
+# Event Handling 2 (target-state)
 
 > Status: forward-looking architecture guide, not the `as-built` contract.
 >
@@ -7,6 +7,7 @@
 > - [`docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md`](OpenShiftEventHandlingStory.md)
 > - [`docs/PodLoggerJunitDemoPRD.md`](../../PodLoggerJunitDemoPRD.md)
 > - [`docs/PodLoggerJunitDemoTest.md`](../../PodLoggerJunitDemoTest.md)
+> - [`docs/PodLoggerJunitDemoCommands.md`](../../PodLoggerJunitDemoCommands.md)
 > - implementation and acceptance tests in `junit-pod-logger`
 >
 > This document remains useful as a target design and reference for future iterations. When it conflicts with the current code, the `as-built` documents and tests win.
@@ -74,7 +75,7 @@ The repository already contains the key building blocks:
 - `PodLoggerExtension` is a JUnit 5 class-level extension implementing `BeforeAllCallback`, `BeforeEachCallback`, `AfterEachCallback`, `AfterAllCallback` and `TestWatcher`.
 - `PodLoggerService` already orchestrates failure-time Events, health checks, bounded log collection, enrichment, persistence and Allure attachments.
 - `OrderErrorIT` applies `@PodLogger(collectOnFailOnly = true)` to the test class and uses REST Assured. On failure the extension attaches the corresponding diagnostics.
-- Existing `docs/podLoggerJunitDemoPRD.md` defines persistent Pod log storage and test-run lifecycle.
+- Existing `docs/PodLoggerJunitDemoPRD.md` defines persistent Pod log storage and test-run lifecycle.
 
 Current Event retrieval is a snapshot `LIST`, not a watch stream.
 
@@ -956,7 +957,7 @@ Recommended adoption order:
 - `junit-pod-logger/src/main/java/com/example/podlogger/PodLoggerExtension.java`
 - `junit-pod-logger/src/main/java/com/example/podlogger/PodLoggerService.java`
 - `junit-pod-logger/src/main/java/com/example/podlogger/client/OpenshiftClient.java`
-- `docs/podLoggerJunitDemoPRD.md`
+- `docs/PodLoggerJunitDemoPRD.md`
 
 ### Kubernetes / libraries
 

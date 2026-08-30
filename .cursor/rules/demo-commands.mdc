@@ -8,7 +8,7 @@ alwaysApply: true
 
 # Demo Commands capture
 
-Канон команд: `docs/PodLoggerJunitDemoCommands.md`. Каталог тестов (`docs/PodLoggerJunitDemoTest.md`) команды не хранит — только ссылку на скоп.
+Канон команд: `docs/PodLoggerJunitDemoCommands.md`. Каталог тестов (`docs/PodLoggerJunitDemoTest.md`) не дублирует тела команд: ссылка на скоп плюс однострочник `-Dtest=` в карточке теста допустимы.
 
 ## Когда срабатывает
 

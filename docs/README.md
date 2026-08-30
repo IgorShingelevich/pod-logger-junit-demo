@@ -1,39 +1,39 @@
 # Документация проекта
 
-Канонические документы (единственный источник истины). Остальные файлы в `docs/` — либо указатели сюда, либо исторические черновики, либо forward-looking архитектурные guides.
-
-Текущая структура (после реорганизации: папок `docs/prd/` и `docs/feature/` нет):
+Канон **контракта** живёт в `docs/`. MD в корне каждого модуля — **локальная карта этого дерева**, не второй PRD и не второй каталог тестов.
 
 ```text
-docs/
-  README.md                          ← этот файл
-  PodLoggerJunitDemoPRD.md         ← общий as-built PRD
-  PodLoggerJunitDemoTest.md         ← каталог всех тестов
-  PodLoggerJunitDemoCommands.md    ← справочник команд (все скопы)
-  story/
-    PersistentLogStoreStory/PersistentLogStoreStory.md
-    OpenShiftEventHandlingStory/
-      OpenShiftEventHandlingStory.md   as-built Events
-      EventHandlingStrategies.md      compact target-state
-      EventHandling2Story.md           expanded target-state
+docs/                              контракт и каталоги (не режем)
+  README.md
+  PodLoggerJunitDemoPRD.md
+  PodLoggerJunitDemoTest.md
+  PodLoggerJunitDemoCommands.md
+  story/...
+demo-app/demo-app.md               SUT: API, logback, Docker image
+demo-tests/demo-test.md            K3s, потребители, зачем fail()
+junit-pod-logger/junit-pod-logger.md  пакеты библиотеки, что переносить
+k8s/k8s.md                        манифест, probes, RBAC
+.cursor/rules/demo-commands.mdc    дописывать команды в Commands.md
 ```
 
 | Документ | О чём |
 | --- | --- |
-| [`README.md`](../README.md) (корень репозитория) | Как запускать, модули, аннотация, путь к SQLite, Jenkins, коды демо-API |
+| [`README.md`](../README.md) (корень репозитория) | Как запускать, модули, аннотация, путь к SQLite, Jenkins |
 | [`PodLoggerJunitDemoPRD.md`](PodLoggerJunitDemoPRD.md) | Общий PRD: назначение, модули, слои, общие инварианты |
-| [`PodLoggerJunitDemoTest.md`](PodLoggerJunitDemoTest.md) | Каталог тестов: приёмка, проверка, известные ошибки |
-| [`PodLoggerJunitDemoCommands.md`](PodLoggerJunitDemoCommands.md) | Справочник команд по скопам (Test Commands и другие) |
-| [`story/PersistentLogStoreStory/PersistentLogStoreStory.md`](story/PersistentLogStoreStory/PersistentLogStoreStory.md) | SQLite store: схема, API, retention, приёмка |
-| [`story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md`](story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md) | Events, health, Allure Events, fail-fast (as-built) |
+| [`PodLoggerJunitDemoTest.md`](PodLoggerJunitDemoTest.md) | Каталог **всех** тестов: приёмка, проверка, известные ошибки |
+| [`PodLoggerJunitDemoCommands.md`](PodLoggerJunitDemoCommands.md) | Справочник команд по скопам |
+| [`story/PersistentLogStoreStory/PersistentLogStoreStory.md`](story/PersistentLogStoreStory/PersistentLogStoreStory.md) | SQLite store |
+| [`story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md`](story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md) | Events, health, fail-fast (as-built) |
+| [`../demo-app/demo-app.md`](../demo-app/demo-app.md) | Специфика модуля `demo-app` |
+| [`../demo-tests/demo-test.md`](../demo-tests/demo-test.md) | Специфика модуля `demo-tests` |
+| [`../junit-pod-logger/junit-pod-logger.md`](../junit-pod-logger/junit-pod-logger.md) | Специфика модуля `junit-pod-logger` |
+| [`../k8s/k8s.md`](../k8s/k8s.md) | Манифест и RBAC |
 
-JavaDoc классов и методов библиотеки: пакет `com.example.podlogger` в модуле `junit-pod-logger`.
+JavaDoc: пакет `com.example.podlogger`.
 
-`docs/propmtHistory/` — рабочие промпты и черновики на момент разработки. Не читать как контракт.
+`docs/propmtHistory/` — черновики. Не контракт.
 
-Дополнительные материалы по развитию event management (не as-built):
+Target-state (не as-built):
 
-- [`story/OpenShiftEventHandlingStory/EventHandlingStrategies.md`](story/OpenShiftEventHandlingStory/EventHandlingStrategies.md) — компактный архитектурный guide и roadmap.
-- [`story/OpenShiftEventHandlingStory/EventHandling2Story.md`](story/OpenShiftEventHandlingStory/EventHandling2Story.md) — расширенная версия того же guide.
-
-Эти два документа полезны для планирования следующей итерации, но не заменяют текущий as-built контракт из story-PRD и кода.
+- [`story/OpenShiftEventHandlingStory/EventHandlingStrategies.md`](story/OpenShiftEventHandlingStory/EventHandlingStrategies.md)
+- [`story/OpenShiftEventHandlingStory/EventHandling2Story.md`](story/OpenShiftEventHandlingStory/EventHandling2Story.md)

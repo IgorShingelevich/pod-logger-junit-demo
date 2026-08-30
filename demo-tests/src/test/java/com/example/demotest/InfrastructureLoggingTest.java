@@ -35,13 +35,15 @@ class InfrastructureLoggingTest {
     @DisplayName("step 1 - docker is reachable for local infrastructure tests")
     void dockerIsReachable() {
         log.info("Step 1/3: checking Docker availability before any image build or deployment");
-        log.info("Expected setup: Docker Desktop is running and DOCKER_HOST points to tcp://127.0.0.1:2375 when needed");
+        log.info("Expected setup: Docker Desktop is running. Named pipe is enough on Windows; "
+                + "DOCKER_HOST=tcp://127.0.0.1:2375 is optional");
 
         CommandResult result = runCommand(findRepoRoot(), "docker", "info");
 
         assertEquals(0, result.exitCode(),
-                "Docker is not reachable. Start Docker Desktop, enable tcp://localhost:2375 without TLS, "
-                        + "and rerun the test.\n" + result.output());
+                "Docker is not reachable. Start Docker Desktop and rerun the test. "
+                        + "On Windows the default named pipe is enough; tcp://localhost:2375 is optional.\n"
+                        + result.output());
         assertFalse(result.output().isBlank(), "docker info returned no output");
 
         log.info("Docker is available. First output lines:\n{}", firstLines(result.output(), 12));

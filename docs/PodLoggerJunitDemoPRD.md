@@ -32,9 +32,9 @@
 
 | Модуль | Роль | Docker |
 | --- | --- | --- |
-| `demo-app` | Spring Boot SUT: `GET /health`, `GET /api/orders/{code}` → 400 + ERROR JSON в stdout | только как образ для K3s |
-| `junit-pod-logger` | Библиотека: `@PodLogger`, extension, runtime, Allure, SQLite, Events | не нужен |
-| `demo-tests` | Потребитель: K3s, деплой, RestAssured, 4 ожидаемо красных parameterized кейса | нужен |
+| `demo-app` | Spring Boot SUT: `GET /health`, `GET /api/orders/{code}` → 400 + ERROR JSON в stdout. Локально: [`demo-app/demo-app.md`](../demo-app/demo-app.md) | только как образ для K3s |
+| `junit-pod-logger` | Библиотека: `@PodLogger`, extension, runtime, Allure, SQLite, Events. Локально: [`junit-pod-logger/junit-pod-logger.md`](../junit-pod-logger/junit-pod-logger.md) | не нужен |
+| `demo-tests` | Потребитель: K3s, деплой, RestAssured, 4 ожидаемо красных parameterized кейса. Локально: [`demo-tests/demo-test.md`](../demo-tests/demo-test.md) | нужен |
 
 ---
 
@@ -75,6 +75,7 @@ PodLoggerExtension  ──►  PodLoggerService  ──► OpenshiftClient
 6. Прогоны `DEV` / `ST` / `FT` / `LOCAL` живут в **одной** SQLite.
 7. Events на passed-тесте не читаются и не аттачатся.
 8. `relevantEvents` в SQLite **не** пишутся.
+9. `podName` в log DTO парсер stdout не ставит (`null`, если поля не было в JSON строки).
 
 ---
 
@@ -87,8 +88,8 @@ afterEach   passed → CollectGate логов; failed → Events + availability 
 afterAll    merge логов прогона → publish TestRunFinished → finishTestRun
 ```
 
-Подробности логов: Persistent Log Store PRD.  
-Подробности Events/health/fail-fast: OpenShift Event Handling PRD.
+Подробности логов: [`PersistentLogStoreStory.md`](story/PersistentLogStoreStory/PersistentLogStoreStory.md).  
+Подробности Events/health/fail-fast: [`OpenShiftEventHandlingStory.md`](story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md).
 
 ---
 
@@ -121,6 +122,7 @@ afterAll    merge логов прогона → publish TestRunFinished → fini
 | Parser | `OpenshiftClientParseTest` | нет |
 | Store | `PersistentLogStoreTest` (display name **persistent log store test**) | нет |
 | Events | `OpenshiftEventHandlingTest` (сценарии 1–5) | нет |
+| Infra стенда | `InfrastructureLoggingTest` в `demo-tests` | да |
 | Демо на поде | `OrderErrorIT` в `demo-tests` | да |
 
 ```bash
@@ -147,6 +149,9 @@ mvn -pl demo-tests -am test
 | Документ | Содержит | Не содержит |
 | --- | --- | --- |
 | Этот файл | назначение, модули, слои, общие инварианты, указатели на фичи | SQL-схему, таблицу persist vs Allure Events |
-| Persistent Log Store PRD | SQLite, API store, fingerprint, retention | Events, fail-fast, health |
-| OpenShift Event Handling PRD | publish/get Events, health, Allure Events, fail-fast | query API store, schema |
-| README | как запускать, аннотация, путь к БД, Jenkins, коды API демо | полный SQL, полный контракт хуков Events (ссылка на PRD) |
+| [`PersistentLogStoreStory.md`](story/PersistentLogStoreStory/PersistentLogStoreStory.md) | SQLite, API store, fingerprint, retention | Events, fail-fast, health |
+| [`OpenShiftEventHandlingStory.md`](story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md) | publish/get Events, health, Allure Events, fail-fast | query API store, schema |
+| [`PodLoggerJunitDemoTest.md`](PodLoggerJunitDemoTest.md) | каталог тестов, приёмка, известные ошибки | тела команд (ссылка на Commands) |
+| [`PodLoggerJunitDemoCommands.md`](PodLoggerJunitDemoCommands.md) | команды по скопам | критерии приёмки |
+| README | как запускать, аннотация, путь к БД, Jenkins | полный SQL, полный контракт хуков Events |
+| `demo-app.md` / `demo-test.md` / `junit-pod-logger.md` / `k8s.md` | специфика дерева модуля | второй каталог тестов, второй PRD |

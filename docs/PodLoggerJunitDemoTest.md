@@ -12,7 +12,7 @@
 - Events as-built: [`story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md`](story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md)
 - Events target-state (не as-built): [`story/OpenShiftEventHandlingStory/EventHandlingStrategies.md`](story/OpenShiftEventHandlingStory/EventHandlingStrategies.md), [`story/OpenShiftEventHandlingStory/EventHandling2Story.md`](story/OpenShiftEventHandlingStory/EventHandling2Story.md)
 
-Модульные указатели (не дублируют каталог): [`demo-tests/demo-test.md`](../demo-tests/demo-test.md), [`junit-pod-logger/junit-pod-logger.md`](../junit-pod-logger/junit-pod-logger.md), [`demo-app/demo-app.md`](../demo-app/demo-app.md), [`k8s/k8s.md`](../k8s/k8s.md).
+Модульные MD (специфика дерева, не второй каталог тестов): [`demo-tests/demo-test.md`](../demo-tests/demo-test.md), [`junit-pod-logger/junit-pod-logger.md`](../junit-pod-logger/junit-pod-logger.md), [`demo-app/demo-app.md`](../demo-app/demo-app.md), [`k8s/k8s.md`](../k8s/k8s.md).
 
 ---
 

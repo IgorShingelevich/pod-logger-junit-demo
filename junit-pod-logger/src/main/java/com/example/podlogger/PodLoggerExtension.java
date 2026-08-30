@@ -26,7 +26,7 @@ import com.example.podlogger.store.dto.TestRunDto;
  * старт/финиш test run, UTC-окно кейса, счётчики TestWatcher, флаг stand-down.
  * SQL, парсинг dump и Fabric8-вызовы сюда не входят — их делает {@link PodLoggerService}.
  *
- * <p>Порядок хуков (контракт OpenShift Event Handling):
+ * <p>Порядок хуков (контракт {@code docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md}):
  * <ol>
  *   <li>{@code beforeAll} — applyAnnotation, {@code startTestRun}, publish {@code TestRunStarted},
  *       {@code isPodAvailable}; stand-down → fail-fast класса;</li>

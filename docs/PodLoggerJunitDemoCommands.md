@@ -33,36 +33,61 @@ PRD: [`PodLoggerJunitDemoPRD.md`](PodLoggerJunitDemoPRD.md).
 
 ## Environment
 
-Команды проверки и настройки окружения (не привязаны к одному тесту).
-
-_Пока пусто как отдельный операционный скоп. Команды, которыми в сессии готовили JDK/Maven под тесты, лежат в [Test Commands → Проверка среды](#проверка-среды-jdk--maven--docker--env)._
+Команды проверки и настройки окружения. JDK: **17+** (`pom` `release=17`; в сессии был JDK 21).
 
 ```powershell
-# сюда: java -version, mvn -version, JAVA_HOME, PATH, распаковка Maven
+where.exe java
+where.exe mvn.cmd
+mvn -version
+java -version
+Write-Output "JAVA_HOME=$env:JAVA_HOME"
+Write-Output "M2_HOME=$env:M2_HOME"
+Write-Output "MAVEN_HOME=$env:MAVEN_HOME"
+Write-Output "POD_LOGGER_STORE_PATH=$env:POD_LOGGER_STORE_PATH"
+Write-Output "DOCKER_HOST=$env:DOCKER_HOST"
+Write-Output "TESTCONTAINERS_RYUK_DISABLED=$env:TESTCONTAINERS_RYUK_DISABLED"
+Get-ChildItem Env: | Where-Object { $_.Name -match 'JAVA|MAVEN|M2|DOCKER|POD_LOGGER|TESTCONTAINERS' }
+Get-Command mvn
+Get-ChildItem 'C:\Users\V\apache-maven-3.9.16\bin'
+Get-Item 'C:\Program Files\apache-maven-3.9.16-bin.zip'
+```
+
+Zip в Program Files — не runnable `bin`. Рабочий Maven: `C:\Users\V\apache-maven-3.9.16`.
+
+```powershell
+$dest = "C:\Users\V\apache-maven-3.9.16"
+if (Test-Path $dest) { Write-Host "Already extracted at $dest" } else {
+  Expand-Archive -LiteralPath "C:\Program Files\apache-maven-3.9.16-bin.zip" -DestinationPath "C:\Users\V" -Force
+}
+$env:PATH = "C:\Users\V\apache-maven-3.9.16\bin;$env:PATH"
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-21"
 ```
 
 ---
 
 ## Docker / CTL
 
-Команды Docker Desktop и локального CTL. `kubectl`/`oc` в демо-прогоне не использовались: Fabric8 ходит в API K3s-контейнера сам.
-
-_Пока пусто как отдельный операционный скоп. Команды, которыми проверяли Docker под тесты, лежат в [Test Commands → Проверка CTL](#проверка-ctl-docker--кластер)._
+Docker Desktop и локальный CTL. `kubectl`/`oc` в демо-прогоне не вызывались. На Windows named pipe достаточен; `DOCKER_HOST=tcp://127.0.0.1:2375` не обязателен.
 
 ```powershell
-# сюда: docker version, docker info, docker ps, docker build
+docker version
+docker version --format "{{.Server.Version}}"
+docker info
+docker info --format "ServerVersion={{.ServerVersion}} OperatingSystem={{.OperatingSystem}} Driver={{.Driver}}"
+docker info --format "Containers={{.Containers}} Running={{.ContainersRunning}} Images={{.Images}}"
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Image}}"
+docker build -t demo-api:local demo-app
 ```
 
 ---
 
 ## Build
 
-Сборка артефактов без запуска тестов.
-
-_Пока пусто как отдельный операционный скоп. Команды `mvn ... package -DskipTests`, использованные перед demo-tests, лежат в [Test Commands → Сборка и тесты по модулям](#сборка-и-тесты-по-модулям)._
+Сборка артефактов без тестов. Jar `demo-app/target/demo-app.jar` нужен Dockerfile и `ClusterLifecycle`.
 
 ```powershell
-# сюда: mvn -pl demo-app -am package -DskipTests
+mvn -DskipTests package
+mvn -pl demo-app -am package -DskipTests
 ```
 
 ---
@@ -96,77 +121,13 @@ mvn -pl demo-tests -am test -Dtest=InfrastructureLoggingTest
 
 ### Event handling analysis (не отдельная Maven-цель)
 
-Сверка as-built vs PRD шла по файлам и git:
-
-```powershell
-git status --short
-git diff -- README.md docs/README.md docs/prd/OpenShiftEventHandlingPRD.md docs/prd/EventHandlingPRD.md docs/EventHandling.PRD.md
-```
-
-После реорганизации смотреть:
-
-- `docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md`
-- `docs/story/OpenShiftEventHandlingStory/EventHandlingStrategies.md`
-- `docs/story/OpenShiftEventHandlingStory/EventHandling2Story.md`
-- код: `PodLoggerExtension`, `PodLoggerService`, `OpenshiftClient`, `StandDownEventMatcher`
-
-Прогон приёмки Events без кластера:
+Сверка as-built: [`Git`](#git) + файлы `docs/story/OpenShiftEventHandlingStory/`. Код: `PodLoggerExtension`, `PodLoggerService`, `OpenshiftClient`, `StandDownEventMatcher`.
 
 ```powershell
 mvn -pl junit-pod-logger -am test -Dtest=OpenshiftEventHandlingTest
 ```
 
-### Проверка среды (JDK / Maven / Docker / env)
-
-```powershell
-where.exe java
-where.exe mvn.cmd
-mvn -version
-java -version
-Write-Output "JAVA_HOME=$env:JAVA_HOME"
-Write-Output "M2_HOME=$env:M2_HOME"
-Write-Output "MAVEN_HOME=$env:MAVEN_HOME"
-Write-Output "POD_LOGGER_STORE_PATH=$env:POD_LOGGER_STORE_PATH"
-Write-Output "DOCKER_HOST=$env:DOCKER_HOST"
-Write-Output "TESTCONTAINERS_RYUK_DISABLED=$env:TESTCONTAINERS_RYUK_DISABLED"
-Get-ChildItem Env: | Where-Object { $_.Name -match 'JAVA|MAVEN|M2|DOCKER|POD_LOGGER|TESTCONTAINERS' }
-Get-Command mvn
-Get-ChildItem 'C:\Users\V\apache-maven-3.9.16\bin'
-Get-Item 'C:\Program Files\apache-maven-3.9.16-bin.zip'
-```
-
-Поиск Maven (zip в Program Files — не runnable `bin`):
-
-```powershell
-Get-ChildItem -LiteralPath "C:\Program Files" -Directory | Where-Object { $_.Name -like "*maven*" -or $_.Name -like "*apache*" }
-Get-ChildItem "C:\Program Files" -Filter "*maven*" -Recurse -Depth 3 -ErrorAction SilentlyContinue | Select-Object -First 30 FullName
-$mvnHome = 'C:\Program Files\apache-maven-3.9.16-bin.zip\apache-maven-3.9.16'
-Test-Path "$mvnHome\bin\mvn.cmd"
-```
-
-Распаковка Maven (один раз в диалоге):
-
-```powershell
-$dest = "C:\Users\V\apache-maven-3.9.16"
-if (Test-Path $dest) { Write-Host "Already extracted at $dest" } else {
-  Expand-Archive -LiteralPath "C:\Program Files\apache-maven-3.9.16-bin.zip" -DestinationPath "C:\Users\V" -Force
-}
-$env:PATH = "C:\Users\V\apache-maven-3.9.16\bin;$env:PATH"
-$env:JAVA_HOME = "C:\Program Files\Java\jdk-21"
-```
-
-### Проверка CTL (Docker / кластер)
-
-```powershell
-docker version
-docker version --format "{{.Server.Version}}"
-docker info
-docker info --format "ServerVersion={{.ServerVersion}} OperatingSystem={{.OperatingSystem}} Driver={{.Driver}}"
-docker info --format "Containers={{.Containers}} Running={{.ContainersRunning}} Images={{.Images}}"
-docker info --format "Server: {{.ServerVersion}} OS: {{.OperatingSystem}} Running: {{.ContainersRunning}}"
-docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Image}}"
-docker build -t demo-api:local demo-app
-```
+Подготовка среды и Docker — скопы [Environment](#environment), [Docker / CTL](#docker--ctl), [Build](#build).
 
 ### Сборка и тесты по модулям
 
@@ -215,7 +176,7 @@ foreach ($file in $reports) {
 Полный список Shell-вызовов сессии проверки тестов (40), в порядке выполнения:
 
 1. `git status --short`
-2. `git diff -- README.md docs/README.md docs/prd/OpenShiftEventHandlingPRD.md docs/prd/EventHandlingPRD.md docs/EventHandling.PRD.md`
+2. `git diff` по тогдашним путям `docs/prd/...` и `docs/EventHandling.PRD.md` (сейчас этих файлов нет)
 3. повтор того же `git diff`
 4. `mvn -pl junit-pod-logger -am test` (ещё до PATH Maven — не сработал)
 5. `where.exe java`
@@ -330,13 +291,17 @@ python -c "import sqlite3; p=r'C:\Users\V\pod-logger-junit-demo\demo-tests\targe
 
 ## Git
 
-Команды git вне тестового прогона.
+```powershell
+git status --short
+```
 
-_Пока пусто как отдельный операционный скоп. `git status` / `git diff` сессии сверки Event Handling лежат в [Test Commands → Event handling analysis](#event-handling-analysis-не-отдельная-maven-цель)._
+Сверка Event Handling в сессии (пути **на тот момент**; сейчас `docs/prd/` и `docs/EventHandling.PRD.md` не существуют):
 
 ```powershell
-# сюда: git status, git diff, git log
+git diff -- README.md docs/README.md docs/prd/OpenShiftEventHandlingPRD.md docs/prd/EventHandlingPRD.md docs/EventHandling.PRD.md
 ```
+
+Актуальные файлы: `docs/story/OpenShiftEventHandlingStory/`.
 
 ---
 

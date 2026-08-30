@@ -4,6 +4,7 @@
 **Канонический документ фичи:** этот файл (`docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md`).  
 **Общий PRD проекта:** [`docs/PodLoggerJunitDemoPRD.md`](../../PodLoggerJunitDemoPRD.md).  
 **Каталог тестов:** [`docs/PodLoggerJunitDemoTest.md`](../../PodLoggerJunitDemoTest.md).  
+**Команды:** [`docs/PodLoggerJunitDemoCommands.md`](../../PodLoggerJunitDemoCommands.md).  
 **Смежная фича:** [`PersistentLogStoreStory.md`](../PersistentLogStoreStory/PersistentLogStoreStory.md).  
 **Модуль:** `junit-pod-logger`  
 **Клиент:** fabric8 `openshift-client` **6.13.4** (`io.fabric8.openshift.client.OpenShiftClient`)  

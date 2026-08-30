@@ -23,7 +23,8 @@ import com.example.podlogger.store.EnvironmentType;
  *
  * <p>Один флаг {@link #collectOnFailOnly()} управляет обоими выходами логов.
  * Kubernetes Events публикуются в {@code beforeAll}/{@code afterAll} и читаются
- * только на упавшем invocation (см. OpenShift Event Handling PRD).
+ * только на упавшем invocation
+ * (см. {@code docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md}).
  *
  * <p>Ставится только на класс ({@link ElementType#TYPE}). Без этой аннотации
  * {@link PodLoggerExtension} бросает {@link IllegalStateException}.

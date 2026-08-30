@@ -1,4 +1,4 @@
-# EventHandling.PRD
+# Event Handling strategies (target-state)
 
 > Статус: архитектурный guide и roadmap, а не `as-built` контракт.
 >
@@ -7,6 +7,7 @@
 > - [`docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md`](OpenShiftEventHandlingStory.md)
 > - [`docs/PodLoggerJunitDemoPRD.md`](../../PodLoggerJunitDemoPRD.md)
 > - [`docs/PodLoggerJunitDemoTest.md`](../../PodLoggerJunitDemoTest.md)
+> - [`docs/PodLoggerJunitDemoCommands.md`](../../PodLoggerJunitDemoCommands.md)
 > - код в `junit-pod-logger`
 >
 > Этот документ описывает целевую эволюцию event management. Если он расходится с текущим кодом, приоритет у `as-built` документов и тестов.
@@ -557,7 +558,7 @@ Project:
 - `junit-pod-logger/src/main/java/com/example/podlogger/PodLoggerExtension.java`
 - `junit-pod-logger/src/main/java/com/example/podlogger/PodLoggerService.java`
 - `junit-pod-logger/src/main/java/com/example/podlogger/client/OpenshiftClient.java`
-- `docs/podLoggerJunitDemoPRD.md`
+- `docs/PodLoggerJunitDemoPRD.md`
 
 Official/current technical sources:
 - https://kubernetes.io/docs/reference/kubernetes-api/core/event-v1/

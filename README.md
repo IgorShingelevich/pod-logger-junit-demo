@@ -20,6 +20,10 @@
 | [`docs/story/PersistentLogStoreStory/PersistentLogStoreStory.md`](docs/story/PersistentLogStoreStory/PersistentLogStoreStory.md) | SQLite store |
 | [`docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md`](docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md) | Events, health, fail-fast |
 | [`docs/README.md`](docs/README.md) | Оглавление docs |
+| [`demo-app/demo-app.md`](demo-app/demo-app.md) | SUT: API, JSON-stdout, Docker image |
+| [`demo-tests/demo-test.md`](demo-tests/demo-test.md) | K3s/Testcontainers, потребители `@PodLogger` |
+| [`junit-pod-logger/junit-pod-logger.md`](junit-pod-logger/junit-pod-logger.md) | Карта пакетов библиотеки, что переносить |
+| [`k8s/k8s.md`](k8s/k8s.md) | Манифест демо, probes, RBAC |
 
 JavaDoc каждого класса и метода — в модуле `junit-pod-logger`.
 
@@ -30,7 +34,7 @@ JavaDoc каждого класса и метода — в модуле `junit-p
 
 ## Требования
 
-- JDK 17
+- JDK 17+ (компиляция `release=17`; прогон на JDK 21 допустим)
 - Maven 3.9+
 - Docker Desktop (только для `OrderErrorIT` / `InfrastructureLoggingTest` в `demo-tests`)
 
@@ -67,13 +71,15 @@ mvn -pl demo-tests -am test
 
 Четыре invocation **ожидаемо красные**: после проверки HTTP 400 тест вызывает `Assertions.fail(...)`, иначе при `collectOnFailOnly=true` не будет ни Allure-аттача логов, ни строк в SQLite.
 
-Отчёт Allure:
+Отчёт Allure (plugin `allure-maven` 2.15.0). Prefix `allure:` из корня репозитория часто **не** резолвится; рабочая команда:
 
 ```bash
-mvn -pl demo-tests allure:report
+mvn -pl demo-tests io.qameta.allure:allure-maven:2.15.0:report
 ```
 
-Результаты: `demo-tests/target/allure-results`. На каждый кейс (`UNKNOWN_SKU`, `OUT_OF_STOCK`, `PAYMENT_DECLINED`, `USER_BLOCKED`) — аттач `pod-logs-<code>.json` с событиями **только своего** временного окна. На fail при непустых Events — ещё `pod-events-<code>.json`.
+Результаты: `demo-tests/target/allure-results`. На каждый failed кейс (`UNKNOWN_SKU`, `OUT_OF_STOCK`, `PAYMENT_DECLINED`, `USER_BLOCKED`) — аттач `pod-logs-<code>.json` (окно invocation ±2s; соседний кейс может попасть в срез). `pod-events-<code>.json` — **только если** `getEvents(window)` непустой; пустой список не аттачится. В v1 `TestRunStarted` часто попадает только в первый parameterized кейс. `podName` в JSON логов / SQLite часто `null`: парсер stdout его не подставляет.
+
+Полный список команд: [`docs/PodLoggerJunitDemoCommands.md`](docs/PodLoggerJunitDemoCommands.md).
 
 ## Аннотация
 
@@ -120,7 +126,7 @@ shouldCollect = !collectOnFailOnly || failed
 
 `PodLogDto.relevantEvents` заполняется на fail для Allure JSON; в SQLite поле не хранится.
 
-RBAC (для закрытого контура):
+RBAC (для закрытого контура; тот же YAML в [`k8s/k8s.md`](k8s/k8s.md)):
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -168,7 +174,7 @@ rules:
 
 - `PodStoreService` — save / get по overload-ам и `LogQuery`, `getLogsForWholeRun`, `deleteOlderThan(days)`
 - `TestRunStore` — lifecycle и metadata прогона
-- `PodLogDto` — поля лога из поды **плюс** контекст: `testRunId`, `runName`/`testRunName`, `testSuiteName`, `relatedTestClass`, `relatedTestMethod`, `environmentType`, `serviceType`, `fingerprint`, `relevantEvents` (runtime only)
+`PodLogDto` — поля лога из поды **плюс** контекст: `testRunId`, `runName`/`testRunName`, `testSuiteName`, `relatedTestClass`, `relatedTestMethod`, `environmentType`, `serviceType`, `fingerprint`, `relevantEvents` (runtime only). `podName` в log DTO парсер stdout **не** заполняет (остаётся `null`, если его не было в JSON строки).
 
 `deleteOlderThan(days)` считает возраст по `test_run.started_at`, удаляет **закрытый** run и его `log_entry`. Открытые run (`finished_at IS NULL`) не трогает.
 
@@ -181,6 +187,8 @@ rules:
 - Агент с Maven 17 + docker CLI: [`docker/jenkins/Dockerfile`](docker/jenkins/Dockerfile). Агенту нужен доступ к Docker socket (`/var/run/docker.sock`) для Testcontainers.
 
 ## Коды ошибок API
+
+Канон SUT: [`demo-app/demo-app.md`](demo-app/demo-app.md).
 
 | code | message в JSON и в логе поды |
 | --- | --- |

@@ -4,6 +4,7 @@
 **Канонический документ фичи:** этот файл (`docs/story/PersistentLogStoreStory/PersistentLogStoreStory.md`).  
 **Общий PRD:** [`docs/PodLoggerJunitDemoPRD.md`](../../PodLoggerJunitDemoPRD.md).  
 **Каталог тестов:** [`docs/PodLoggerJunitDemoTest.md`](../../PodLoggerJunitDemoTest.md).  
+**Команды:** [`docs/PodLoggerJunitDemoCommands.md`](../../PodLoggerJunitDemoCommands.md).  
 **Смежная фича:** [`OpenShiftEventHandlingStory.md`](../OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md).  
 **База v1:** один файл SQLite, не дерево папок и не H2. Export JSON в v1 нет.
 
