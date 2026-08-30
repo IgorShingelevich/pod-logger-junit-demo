@@ -4,8 +4,9 @@
 >
 > Current source of truth:
 >
-> - [`docs/feature/OpenShiftEventHandling/OpenShiftEventHandlingPRD.md`](feature/OpenShiftEventHandling/OpenShiftEventHandlingPRD.md)
-> - [`docs/prd/podLoggerJunitDemoPRD.md`](prd/podLoggerJunitDemoPRD.md)
+> - [`docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md`](OpenShiftEventHandlingStory.md)
+> - [`docs/PodLoggerJunitDemoPRD.md`](../../PodLoggerJunitDemoPRD.md)
+> - [`docs/PodLoggerJunitDemoTest.md`](../../PodLoggerJunitDemoTest.md)
 > - implementation and acceptance tests in `junit-pod-logger`
 >
 > This document remains useful as a target design and reference for future iterations. When it conflicts with the current code, the `as-built` documents and tests win.

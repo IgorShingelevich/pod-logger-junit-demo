@@ -12,8 +12,9 @@
  *   <li>{@link com.example.podlogger.allure.LogAllureAttachmentService} — выход в Allure.</li>
  * </ul>
  *
- * <p>Контракт фич: {@code docs/prd/podLoggerJunitDemoPRD.md},
- * {@code docs/feature/PersistentLogStore/PersistentLogStorePRD.md},
- * {@code docs/feature/OpenShiftEventHandling/OpenShiftEventHandlingPRD.md}.
+ * <p>Контракт фич: {@code docs/PodLoggerJunitDemoPRD.md},
+ * {@code docs/story/PersistentLogStoreStory/PersistentLogStoreStory.md},
+ * {@code docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md}.
+ * Каталог тестов: {@code docs/PodLoggerJunitDemoTest.md}.
  */
 package com.example.podlogger;

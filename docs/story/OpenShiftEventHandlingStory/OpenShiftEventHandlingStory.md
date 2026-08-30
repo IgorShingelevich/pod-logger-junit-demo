@@ -1,13 +1,14 @@
 # PRD: OpenShift Event Handling для `@PodLogger`
 
 **Статус:** реализовано в `junit-pod-logger` (as-built).  
-**Канонический документ фичи:** этот файл (`docs/feature/OpenShiftEventHandling/OpenShiftEventHandlingPRD.md`).  
-**Общий PRD проекта:** [`docs/prd/podLoggerJunitDemoPRD.md`](../../prd/podLoggerJunitDemoPRD.md).  
-**Смежная фича:** [`PersistentLogStorePRD.md`](../PersistentLogStore/PersistentLogStorePRD.md).  
+**Канонический документ фичи:** этот файл (`docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md`).  
+**Общий PRD проекта:** [`docs/PodLoggerJunitDemoPRD.md`](../../PodLoggerJunitDemoPRD.md).  
+**Каталог тестов:** [`docs/PodLoggerJunitDemoTest.md`](../../PodLoggerJunitDemoTest.md).  
+**Смежная фича:** [`PersistentLogStoreStory.md`](../PersistentLogStoreStory/PersistentLogStoreStory.md).  
 **Модуль:** `junit-pod-logger`  
 **Клиент:** fabric8 `openshift-client` **6.13.4** (`io.fabric8.openshift.client.OpenShiftClient`)  
 
-Контракт ниже совпадает с кодом. Исторические черновики в `docs/propmtWorks` источником истины не являются.
+Контракт ниже совпадает с кодом. Исторические черновики в `docs/propmtHistory` источником истины не являются.
 
 ---
 

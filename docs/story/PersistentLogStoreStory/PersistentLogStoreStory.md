@@ -1,9 +1,10 @@
 # PRD: Persistent Log Store для `@PodLogger`
 
 **Статус:** реализовано в `junit-pod-logger` (as-built).  
-**Канонический документ фичи:** этот файл.  
-**Общий PRD:** [`docs/prd/podLoggerJunitDemoPRD.md`](../../prd/podLoggerJunitDemoPRD.md).  
-**Смежная фича:** [`OpenShiftEventHandlingPRD.md`](../OpenShiftEventHandling/OpenShiftEventHandlingPRD.md).  
+**Канонический документ фичи:** этот файл (`docs/story/PersistentLogStoreStory/PersistentLogStoreStory.md`).  
+**Общий PRD:** [`docs/PodLoggerJunitDemoPRD.md`](../../PodLoggerJunitDemoPRD.md).  
+**Каталог тестов:** [`docs/PodLoggerJunitDemoTest.md`](../../PodLoggerJunitDemoTest.md).  
+**Смежная фича:** [`OpenShiftEventHandlingStory.md`](../OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md).  
 **База v1:** один файл SQLite, не дерево папок и не H2. Export JSON в v1 нет.
 
 ---

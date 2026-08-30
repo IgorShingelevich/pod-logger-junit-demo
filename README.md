@@ -14,17 +14,18 @@
 
 | Документ | Содержание |
 | --- | --- |
-| [`docs/prd/podLoggerJunitDemoPRD.md`](docs/prd/podLoggerJunitDemoPRD.md) | Общий PRD: назначение, модули, слои, инварианты |
-| [`docs/feature/PersistentLogStore/PersistentLogStorePRD.md`](docs/feature/PersistentLogStore/PersistentLogStorePRD.md) | SQLite store |
-| [`docs/feature/OpenShiftEventHandling/OpenShiftEventHandlingPRD.md`](docs/feature/OpenShiftEventHandling/OpenShiftEventHandlingPRD.md) | Events, health, fail-fast |
+| [`docs/PodLoggerJunitDemoPRD.md`](docs/PodLoggerJunitDemoPRD.md) | Общий PRD: назначение, модули, слои, инварианты |
+| [`docs/PodLoggerJunitDemoTest.md`](docs/PodLoggerJunitDemoTest.md) | Каталог тестов: приёмка, проверка, команды, известные ошибки |
+| [`docs/story/PersistentLogStoreStory/PersistentLogStoreStory.md`](docs/story/PersistentLogStoreStory/PersistentLogStoreStory.md) | SQLite store |
+| [`docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md`](docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md) | Events, health, fail-fast |
 | [`docs/README.md`](docs/README.md) | Оглавление docs |
 
 JavaDoc каждого класса и метода — в модуле `junit-pod-logger`.
 
-Дополнительные архитектурные материалы:
+Дополнительные архитектурные материалы (не as-built):
 
-- [`docs/prd/EventHandlingPRD.md`](docs/prd/EventHandlingPRD.md) — forward-looking guide по возможной эволюции event management; не заменяет текущий `as-built` контракт.
-- [`docs/EventHandling.PRD.md`](docs/EventHandling.PRD.md) — расширенная версия того же guide с более подробными вариантами интеграции; использовать как reference для следующей итерации, а не как источник истины для текущего поведения.
+- [`docs/story/OpenShiftEventHandlingStory/EventHandlingStrategies.md`](docs/story/OpenShiftEventHandlingStory/EventHandlingStrategies.md) — forward-looking guide по возможной эволюции event management; не заменяет текущий as-built контракт.
+- [`docs/story/OpenShiftEventHandlingStory/EventHandling2Story.md`](docs/story/OpenShiftEventHandlingStory/EventHandling2Story.md) — расширенная версия того же guide; использовать как reference для следующей итерации.
 
 ## Требования
 

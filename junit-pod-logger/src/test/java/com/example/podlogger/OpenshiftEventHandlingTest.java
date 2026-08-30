@@ -54,7 +54,8 @@ import javax.sql.DataSource;
  * publish/get коды, Allure Events на fail, отсутствие пустого аттача,
  * fail-fast по stand-down, красный health без abort.
  *
- * <p>Контракт: {@code docs/feature/OpenShiftEventHandling/OpenShiftEventHandlingPRD.md}.
+ * <p>Контракт: {@code docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md}.
+ * Каталог: {@code docs/PodLoggerJunitDemoTest.md}.
  */
 @DisplayName("OpenShift Event Handling Test")
 class OpenshiftEventHandlingTest {

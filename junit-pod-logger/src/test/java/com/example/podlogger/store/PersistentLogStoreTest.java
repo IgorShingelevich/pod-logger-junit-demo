@@ -39,7 +39,8 @@ import com.example.podlogger.store.sqlite.SqliteTestRunRepository;
  * Приёмка Persistent Log Store без кластера: запись/чтение SQLite, фильтры {@link LogQuery},
  * retention, gate {@code collectOnFailOnly} через EngineTestKit + {@link PersistentLogStoreHarness}.
  *
- * <p>Контракт: {@code docs/feature/PersistentLogStore/PersistentLogStorePRD.md}.
+ * <p>Контракт: {@code docs/story/PersistentLogStoreStory/PersistentLogStoreStory.md}.
+ * Каталог: {@code docs/PodLoggerJunitDemoTest.md}.
  */
 @DisplayName("persistent log store test")
 class PersistentLogStoreTest {

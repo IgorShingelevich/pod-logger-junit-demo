@@ -1,13 +1,14 @@
 # Общий PRD: `pod-logger-junit-demo`
 
 **Статус:** as-built, источник истины по назначению проекта.  
-**Канонический путь:** `docs/prd/podLoggerJunitDemoPRD.md`.  
-**Операции и запуск:** [`README.md`](../../README.md).  
+**Канонический путь:** `docs/PodLoggerJunitDemoPRD.md`.  
+**Операции и запуск:** [`README.md`](../README.md).  
+**Каталог тестов:** [`PodLoggerJunitDemoTest.md`](PodLoggerJunitDemoTest.md).  
 **Фичи:**  
-- [`Persistent Log Store`](../feature/PersistentLogStore/PersistentLogStorePRD.md)  
-- [`OpenShift Event Handling`](../feature/OpenShiftEventHandling/OpenShiftEventHandlingPRD.md)
+- [`Persistent Log Store`](story/PersistentLogStoreStory/PersistentLogStoreStory.md)  
+- [`OpenShift Event Handling`](story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md)
 
-Этот документ описывает **весь** проект. Фичевые PRD не повторяют модули и запуск — они детализируют свой слой. Черновики в `docs/propmtWorks` не являются источником истины.
+Этот документ описывает **весь** проект. Фичевые PRD не повторяют модули и запуск — они детализируют свой слой. Черновики в `docs/propmtHistory` не являются источником истины.
 
 ---
 

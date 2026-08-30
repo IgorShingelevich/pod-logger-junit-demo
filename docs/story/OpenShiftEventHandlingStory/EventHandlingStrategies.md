@@ -4,8 +4,9 @@
 >
 > Для текущего поведения источником истины являются:
 >
-> - [`docs/feature/OpenShiftEventHandling/OpenShiftEventHandlingPRD.md`](../feature/OpenShiftEventHandling/OpenShiftEventHandlingPRD.md)
-> - [`docs/prd/podLoggerJunitDemoPRD.md`](podLoggerJunitDemoPRD.md)
+> - [`docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md`](OpenShiftEventHandlingStory.md)
+> - [`docs/PodLoggerJunitDemoPRD.md`](../../PodLoggerJunitDemoPRD.md)
+> - [`docs/PodLoggerJunitDemoTest.md`](../../PodLoggerJunitDemoTest.md)
 > - код в `junit-pod-logger`
 >
 > Этот документ описывает целевую эволюцию event management. Если он расходится с текущим кодом, приоритет у `as-built` документов и тестов.
