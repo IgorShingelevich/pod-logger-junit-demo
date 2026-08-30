@@ -315,6 +315,18 @@ git diff -- README.md docs/README.md docs/prd/OpenShiftEventHandlingPRD.md docs/
 
 Актуальные файлы: `docs/story/OpenShiftEventHandlingStory/`.
 
+Сверка канона MD с git HEAD и копий YAML (оглавление `docs/README.md` в HEAD есть, на диске может быть удалено):
+
+```powershell
+git diff --stat
+git ls-tree -r HEAD --name-only docs/
+git show HEAD:docs/README.md
+Get-ChildItem -Path . -Recurse -Filter '*.md' | Where-Object { $_.FullName -notmatch '\\target\\' } | ForEach-Object { $_.FullName.Replace((Get-Location).Path + '\','') }
+fc.exe /b k8s\demo-api.yaml demo-tests\src\test\resources\k8s\demo-api.yaml
+```
+
+Зачем: список MD на диске vs дерево `docs/` в HEAD; бинарное сравнение двух копий манифеста.
+
 ---
 
 ## Cluster
