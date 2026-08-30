@@ -10,7 +10,6 @@
 
 Это **не** полноценный OpenShift (CRC/OKD). Локальный кластер демо — **K3s в Docker (Testcontainers)**. API `pods/log` и core/v1 Events те же.
 
-<<<<<<< HEAD
 ## Документация (канон)
 
 | Документ | Содержание |
@@ -21,12 +20,11 @@
 | [`docs/README.md`](docs/README.md) | Оглавление docs |
 
 JavaDoc каждого класса и метода — в модуле `junit-pod-logger`.
-=======
-Спецификации:
 
-- [`docs/feature/PersistentLogStore/PersistentLogStorePRD.md`](docs/feature/PersistentLogStore/PersistentLogStorePRD.md) — persistent log store.
-- [`docs/EventHandling.PRD.md`](docs/EventHandling.PRD.md) — Event Handling, health checks, fail-fast, multi-Pod diagnostics, REST Assured correlation и стандартные Kubernetes/Fabric8 testing integrations.
->>>>>>> d68bfaec3e4dc0045b94475326818672c013e8ad
+Дополнительные архитектурные материалы:
+
+- [`docs/prd/EventHandlingPRD.md`](docs/prd/EventHandlingPRD.md) — forward-looking guide по возможной эволюции event management; не заменяет текущий `as-built` контракт.
+- [`docs/EventHandling.PRD.md`](docs/EventHandling.PRD.md) — расширенная версия того же guide с более подробными вариантами интеграции; использовать как reference для следующей итерации, а не как источник истины для текущего поведения.
 
 ## Требования
 

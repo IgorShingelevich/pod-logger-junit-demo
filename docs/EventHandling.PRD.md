@@ -1,5 +1,29 @@
 # EventHandling.PRD
 
+> Status: forward-looking architecture guide, not the `as-built` contract.
+>
+> Current source of truth:
+>
+> - [`docs/feature/OpenShiftEventHandling/OpenShiftEventHandlingPRD.md`](feature/OpenShiftEventHandling/OpenShiftEventHandlingPRD.md)
+> - [`docs/prd/podLoggerJunitDemoPRD.md`](prd/podLoggerJunitDemoPRD.md)
+> - implementation and acceptance tests in `junit-pod-logger`
+>
+> This document remains useful as a target design and reference for future iterations. When it conflicts with the current code, the `as-built` documents and tests win.
+
+## 0. How to use this document
+
+- Use it to plan the next stage of event-management evolution, not to reinterpret the current behavior retroactively.
+- Treat its broader EnvironmentGate, multi-Pod and observability sections as optional expansion paths unless they are explicitly accepted into the implemented contract.
+- Validate any adopted ideas against the current feature PRD and existing acceptance tests before changing runtime behavior.
+
+## 0.1 Main deltas versus current implementation
+
+- Current code does not keep a dedicated `BeforeAll` baseline Event snapshot; it probes Events on demand and collects a failure-time snapshot for failed invocations.
+- Current fail-fast is intentionally narrower: only explicit stand-down Events abort the remaining tests.
+- Current `beforeAll` warns on health-only failures instead of blocking the suite.
+- Current publication order is `startTestRun -> TestRunStarted -> probeAvailability`, not `gate -> TestRunStarted`.
+- Current target model is one selected Pod, not a fully aggregated multi-Pod environment.
+
 ## 1. Цель
 
 Определить стандарт взаимодействия слоеного test framework на JUnit 5 + REST Assured + Allure с Kubernetes/OpenShift через Fabric8/OpenShift Client для среды с одной или несколькими Pod.
@@ -884,6 +908,12 @@ com.example.podlogger
 ---
 
 ## 25. Implementation Roadmap
+
+Recommended adoption order:
+
+1. `As-Is Plus Cleanup`: align canonical docs and freeze the current contract.
+2. `Policy Extraction`: separate policy from transport/orchestration without changing semantics.
+3. `Gateway Split` and multi-Pod redesign: only when broader cluster diagnostics become a confirmed requirement.
 
 ### Phase 1 — MVP
 

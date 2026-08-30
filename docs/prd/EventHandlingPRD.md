@@ -1,5 +1,29 @@
 # EventHandling.PRD
 
+> Статус: архитектурный guide и roadmap, а не `as-built` контракт.
+>
+> Для текущего поведения источником истины являются:
+>
+> - [`docs/feature/OpenShiftEventHandling/OpenShiftEventHandlingPRD.md`](../feature/OpenShiftEventHandling/OpenShiftEventHandlingPRD.md)
+> - [`docs/prd/podLoggerJunitDemoPRD.md`](podLoggerJunitDemoPRD.md)
+> - код в `junit-pod-logger`
+>
+> Этот документ описывает целевую эволюцию event management. Если он расходится с текущим кодом, приоритет у `as-built` документов и тестов.
+
+## 0. Как использовать этот документ
+
+- Использовать как набор вариантов и направлений развития, а не как обязательство немедленно переписать текущую реализацию.
+- Не трактовать различия с кодом как defect по умолчанию: часть различий отражает осознанно более широкий target-state.
+- Перед любыми изменениями сверять решения с текущими acceptance tests и feature-PRD.
+
+## 0.1 Ключевые отличия от текущего `as-built`
+
+- В текущем коде нет отдельного baseline snapshot в `BeforeAll` с последующим сравнением; есть `getEvents()` внутри availability probe и windowed snapshot при failed invocation.
+- Текущий `beforeAll` не abort'ит suite по любому `health red`: если нет stand-down event, тесты продолжаются.
+- Текущий `TestRunStarted` публикуется до availability probe, а не после успешного composite gate.
+- Текущая реализация ориентирована на single target pod через selector; multi-pod aggregation пока не является действующим контрактом.
+- Текущий fail-fast ограничен explicit stand-down policy, а не любым infrastructure deviation.
+
 ## 1. Цель и решения
 
 Определить стандарт взаимодействия тестового фреймворка JUnit 5 + REST Assured + Allure с Kubernetes/OpenShift через Fabric8/OpenShift Client для environment с одной или несколькими Pod.
@@ -511,6 +535,12 @@ Cluster-admin не нужен. Secrets не должны попадать в All
 - RBAC follows least privilege.
 
 ## 20. Roadmap
+
+Рекомендуемая стратегия внедрения:
+
+1. `As-Is Plus Cleanup` — сначала выровнять канонические документы и границы текущего контракта.
+2. `Policy Extraction` — затем при необходимости вынести stand-down / availability policy из низкоуровневого client-слоя.
+3. `Gateway Split` и multi-pod model — только если реально требуется следующая итерация observability и cluster diagnostics.
 
 **Phase 1:** EnvironmentGate, multi-Pod discovery, Event LIST, health/readiness composite gate, failure snapshot, Allure state/events/logs, two lifecycle Events.
 
