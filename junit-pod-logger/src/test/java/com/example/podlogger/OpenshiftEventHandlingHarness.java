@@ -31,22 +31,34 @@ import com.example.podlogger.parser.LogParser;
 import com.example.podlogger.store.EnvironmentType;
 
 /**
- * EngineTestKit sample classes and a stub OpenShift client driven by static state.
+ * EngineTestKit sample-классы и stub OpenShift-клиента на static-состоянии.
+ * Кластер не нужен: {@code getLog}/{@code getEvents}/{@code publish}/{@code probe} переопределены.
  */
 final class OpenshiftEventHandlingHarness {
 
+    /** Allure-аттачи, перехваченные stub sink. */
     static final List<CapturedAttachment> ATTACHMENTS = new CopyOnWriteArrayList<>();
+    /** Lifecycle Events, которые stub {@code publishPodEvent} положил в список. */
     static final List<PodEventDto> PUBLISHED = new CopyOnWriteArrayList<>();
+    /** Дошёл ли второй тест до тела. */
     static final AtomicBoolean SECOND_RAN = new AtomicBoolean(false);
+    /** Сколько раз вызывали probe (первый — beforeAll). */
     static final AtomicInteger PROBE_COUNT = new AtomicInteger();
 
+    /** Events, которые вернёт stub {@code getEvents}. */
     static volatile List<PodEventDto> eventsToReturn = List.of();
+    /** Availability на первом probe (beforeAll). */
     static volatile PodAvailability startAvailability = PodAvailability.up();
+    /** Availability на последующих probe (afterEach). */
     static volatile PodAvailability availability = PodAvailability.up();
 
+    /** Не инстанцируется. */
     private OpenshiftEventHandlingHarness() {
     }
 
+    /**
+     * Обнуляет аттачи, published Events, флаги второго теста и availability.
+     */
     static void reset() {
         ATTACHMENTS.clear();
         PUBLISHED.clear();
@@ -57,6 +69,11 @@ final class OpenshiftEventHandlingHarness {
         availability = PodAvailability.up();
     }
 
+    /**
+     * Один ERROR-лог «Unknown SKU» как runtime dump.
+     *
+     * @return список из одной записи
+     */
     static List<PodLogDto> defaultLogs() {
         return List.of(PodLogDto.builder()
                 .timestamp(LocalDateTime.now(ZoneOffset.UTC))
@@ -68,6 +85,13 @@ final class OpenshiftEventHandlingHarness {
                 .build());
     }
 
+    /**
+     * Warning Event с заданным кодом.
+     *
+     * @param code    reason/code
+     * @param message текст
+     * @return DTO
+     */
     static PodEventDto event(String code, String message) {
         return PodEventDto.builder()
                 .code(code)
@@ -82,6 +106,9 @@ final class OpenshiftEventHandlingHarness {
                 .build();
     }
 
+    /**
+     * Минимальный Spring Boot для sample-классов.
+     */
     @SpringBootConfiguration
     @EnableAutoConfiguration
     @ComponentScan(
@@ -95,11 +122,21 @@ final class OpenshiftEventHandlingHarness {
     static class App {
     }
 
+    /**
+     * Primary stub: логи, Events, publish в {@link #PUBLISHED}, probe по счётчику.
+     */
     @TestConfiguration
     static class StubConfig {
 
         @Bean
         @Primary
+        /**
+         * Stub {@link OpenshiftClient} для сценариев Event Handling.
+         *
+         * @param properties настройки
+         * @param logParser  не используется
+         * @return anonymous subclass
+         */
         OpenshiftClient eventHandlingOpenshiftClient(PodLoggerProperties properties, LogParser logParser) {
             return new OpenshiftClient(null, properties, logParser) {
                 @Override
@@ -148,15 +185,24 @@ final class OpenshiftEventHandlingHarness {
 
         @Bean
         @Primary
+        /**
+         * Capturing {@link AllureSink}: кладёт имя и тело в {@link #ATTACHMENTS}.
+         *
+         * @return recording sink
+         */
         AllureSink recordingAllureSink() {
             return (name, contentType, body, fileExtension) ->
                     ATTACHMENTS.add(new CapturedAttachment(name, body));
         }
     }
 
+    /** Имя и JSON-тело Allure-аттача. */
     record CapturedAttachment(String name, String body) {
     }
 
+    /**
+     * Sample: один fail при непустых Events (сценарий 2).
+     */
     @PodLogger(
             collectOnFailOnly = true,
             testRunName = "event-handling-fail-with-events",
@@ -167,12 +213,18 @@ final class OpenshiftEventHandlingHarness {
     @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
     public static class FailWithEventsSample {
 
+        /**
+         * Намеренный AssertionError.
+         */
         @Test
         void failsOnPurpose() {
             throw new AssertionError("forced failure");
         }
     }
 
+    /**
+     * Sample: один fail при пустых Events (сценарий 3).
+     */
     @PodLogger(
             collectOnFailOnly = true,
             testRunName = "event-handling-fail-without-events",
@@ -183,12 +235,18 @@ final class OpenshiftEventHandlingHarness {
     @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
     public static class FailWithoutEventsSample {
 
+        /**
+         * Намеренный fail без Events.
+         */
         @Test
         void failsOnPurpose() {
             throw new AssertionError("forced failure");
         }
     }
 
+    /**
+     * Sample: два теста, первый падает при stand-down (сценарий 4).
+     */
     @PodLogger(
             collectOnFailOnly = true,
             testRunName = "event-handling-stand-down",
@@ -200,12 +258,18 @@ final class OpenshiftEventHandlingHarness {
     @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
     public static class StandDownFailFastSample {
 
+        /**
+         * Исходный product assertion (не должен быть затёрт stand-down).
+         */
         @Test
         @Order(1)
         void firstFails() {
             throw new AssertionError("product assertion");
         }
 
+        /**
+         * Не должен выполниться при fail-fast.
+         */
         @Test
         @Order(2)
         void secondMustNotRun() {
@@ -213,6 +277,9 @@ final class OpenshiftEventHandlingHarness {
         }
     }
 
+    /**
+     * Sample: два теста, health red без stand-down (сценарий 5).
+     */
     @PodLogger(
             collectOnFailOnly = true,
             testRunName = "event-handling-health-red",
@@ -224,12 +291,18 @@ final class OpenshiftEventHandlingHarness {
     @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
     public static class HealthRedNoFailFastSample {
 
+        /**
+         * Первый fail; persist должен быть skip.
+         */
         @Test
         @Order(1)
         void firstFails() {
             throw new AssertionError("product assertion");
         }
 
+        /**
+         * Должен выполниться: health red не abort.
+         */
         @Test
         @Order(2)
         void secondRuns() {
@@ -238,16 +311,20 @@ final class OpenshiftEventHandlingHarness {
     }
 
     /**
-     * In-memory client for publish/get without a cluster.
+     * In-memory client: publish кладёт в список, get читает его. Без fabric8.
      */
     static final class InMemoryOpenshiftClient extends OpenshiftClient {
 
         private final List<PodEventDto> store = new ArrayList<>();
 
+        /** Клиент без fabric8: parser no-op. */
         InMemoryOpenshiftClient() {
             super(null, new PodLoggerProperties(), raw -> List.of());
         }
 
+        /**
+         * Кладёт Event в память и возвращает DTO с {@code code=reason}.
+         */
         @Override
         public synchronized PodEventDto publishPodEvent(String type, String reason, String message) {
             PodEventDto dto = PodEventDto.builder()
@@ -264,11 +341,17 @@ final class OpenshiftEventHandlingHarness {
             return dto;
         }
 
+        /**
+         * Все опубликованные Events.
+         */
         @Override
         public synchronized List<PodEventDto> getEvents() {
             return List.copyOf(store);
         }
 
+        /**
+         * Фильтр по окну timestamp.
+         */
         @Override
         public synchronized List<PodEventDto> getEvents(LocalDateTime from, LocalDateTime to) {
             return store.stream()

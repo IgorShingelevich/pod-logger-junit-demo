@@ -12,12 +12,18 @@ import com.example.podlogger.store.dto.TestRunDto;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Реализация {@link TestRunStore}: валидация draft и делегат в {@link TestRunRepository}.
+ */
 @Service
 @RequiredArgsConstructor
 public class DefaultTestRunStore implements TestRunStore {
 
     private final TestRunRepository testRunRepository;
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public UUID startTestRun(
             String testRunName,
@@ -32,6 +38,9 @@ public class DefaultTestRunStore implements TestRunStore {
                 .build());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public UUID startTestRun(TestRunDto draft) {
         if (draft.getTestRunName() == null || draft.getTestRunName().isBlank()) {
@@ -47,26 +56,41 @@ public class DefaultTestRunStore implements TestRunStore {
         return testRunRepository.insert(draft);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void finishTestRun(UUID testRunId) {
         testRunRepository.finish(testRunId, LocalDateTime.now(ZoneOffset.UTC));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Optional<TestRunDto> getTestRun(UUID testRunId) {
         return testRunRepository.findById(testRunId);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<TestRunDto> getTestRuns(String testRunName) {
         return testRunRepository.findByName(testRunName);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<TestRunDto> getTestRuns(LocalDateTime from, LocalDateTime to) {
         return testRunRepository.findByStartedBetween(from, to);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<TestRunDto> getTestRuns(EnvironmentType environmentType) {
         return testRunRepository.findByEnvironment(environmentType);

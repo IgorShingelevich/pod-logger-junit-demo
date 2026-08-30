@@ -21,12 +21,18 @@ import com.example.podlogger.store.dto.TestRunDto;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * SQLite-реализация {@link TestRunRepository}.
+ */
 @Repository
 @RequiredArgsConstructor
 public class SqliteTestRunRepository implements TestRunRepository {
 
     private final DataSource dataSource;
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public UUID insert(TestRunDto draft) {
         UUID id = draft.getId() == null ? UUID.randomUUID() : draft.getId();
@@ -62,6 +68,9 @@ public class SqliteTestRunRepository implements TestRunRepository {
         return id;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void finish(UUID testRunId, LocalDateTime finishedAt) {
         JdbcSupport.withConnection(dataSource, connection -> {
@@ -79,6 +88,9 @@ public class SqliteTestRunRepository implements TestRunRepository {
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Optional<TestRunDto> findById(UUID testRunId) {
         return JdbcSupport.withConnection(dataSource, connection -> {
@@ -95,6 +107,9 @@ public class SqliteTestRunRepository implements TestRunRepository {
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<TestRunDto> findByName(String testRunName) {
         return JdbcSupport.withConnection(dataSource, connection -> {
@@ -106,6 +121,9 @@ public class SqliteTestRunRepository implements TestRunRepository {
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<TestRunDto> findByStartedBetween(LocalDateTime from, LocalDateTime to) {
         return JdbcSupport.withConnection(dataSource, connection -> {
@@ -121,6 +139,9 @@ public class SqliteTestRunRepository implements TestRunRepository {
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<TestRunDto> findByEnvironment(EnvironmentType environmentType) {
         return JdbcSupport.withConnection(dataSource, connection -> {
@@ -132,6 +153,9 @@ public class SqliteTestRunRepository implements TestRunRepository {
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int deleteClosedOlderThan(LocalDateTime cutoff) {
         return JdbcSupport.withConnection(dataSource, connection -> {
@@ -154,6 +178,13 @@ public class SqliteTestRunRepository implements TestRunRepository {
         });
     }
 
+    /**
+     * Читает все строки statement в список DTO.
+     *
+     * @param statement SELECT
+     * @return список
+     * @throws SQLException ошибка драйвера
+     */
     private static List<TestRunDto> list(PreparedStatement statement) throws SQLException {
         List<TestRunDto> result = new ArrayList<>();
         try (ResultSet rs = statement.executeQuery()) {
@@ -164,6 +195,13 @@ public class SqliteTestRunRepository implements TestRunRepository {
         return result;
     }
 
+    /**
+     * Маппинг колонок {@code test_run} в DTO.
+     *
+     * @param rs текущая строка
+     * @return DTO
+     * @throws SQLException ошибка драйвера
+     */
     private static TestRunDto map(ResultSet rs) throws SQLException {
         return TestRunDto.builder()
                 .id(UUID.fromString(rs.getString("id")))

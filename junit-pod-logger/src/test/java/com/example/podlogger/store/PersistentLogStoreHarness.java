@@ -25,11 +25,19 @@ import com.example.podlogger.client.PodEventDto;
 import com.example.podlogger.client.PodLogDto;
 import com.example.podlogger.parser.LogParser;
 
+/**
+ * Sample-классы и stub {@link OpenshiftClient} для {@link PersistentLogStoreTest}.
+ * EngineTestKit запускает их как отдельные JUnit-классы с {@code @PodLogger}.
+ */
 final class PersistentLogStoreHarness {
 
+    /** Не инстанцируется. */
     private PersistentLogStoreHarness() {
     }
 
+    /**
+     * Минимальный Spring Boot для sample-классов (без harness-классов в scan).
+     */
     @SpringBootConfiguration
     @EnableAutoConfiguration
     @ComponentScan(
@@ -43,11 +51,21 @@ final class PersistentLogStoreHarness {
     static class App {
     }
 
+    /**
+     * Подменяет {@link OpenshiftClient}: фиксированный ERROR-лог, пустые Events, под доступна.
+     */
     @TestConfiguration
     static class StubLogsConfig {
 
         @Bean
         @Primary
+        /**
+         * Stub клиента: один ERROR «Unknown SKU», Events нет, probe = up.
+         *
+         * @param properties настройки
+         * @param logParser  не используется stub'ом getLog
+         * @return анонимный subclass
+         */
         OpenshiftClient persistentStoreOpenshiftClient(PodLoggerProperties properties, LogParser logParser) {
             return new OpenshiftClient(null, properties, logParser) {
                 @Override
@@ -90,6 +108,9 @@ final class PersistentLogStoreHarness {
         }
     }
 
+    /**
+     * Упавший sample: CollectGate открыт, persist должен записать строку.
+     */
     @PodLogger(
             collectOnFailOnly = true,
             testRunName = "persistent-log-store-failed",
@@ -100,12 +121,18 @@ final class PersistentLogStoreHarness {
     @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
     public static class FailedLoggedSample {
 
+        /**
+         * Намеренный fail, чтобы extension сохранил stub-лог.
+         */
         @Test
         void failsOnPurpose() {
             fail("collectOnFailOnly demo: force failure so extension persists pod logs");
         }
     }
 
+    /**
+     * Зелёный sample: CollectGate закрыт, {@code log_entry} быть не должно.
+     */
     @PodLogger(
             collectOnFailOnly = true,
             testRunName = "persistent-log-store-passed",
@@ -116,6 +143,9 @@ final class PersistentLogStoreHarness {
     @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
     public static class PassingLoggedSample {
 
+        /**
+         * Успешный тест: persist skip.
+         */
         @Test
         void passes() {
             // gate must skip Allure and SQLite

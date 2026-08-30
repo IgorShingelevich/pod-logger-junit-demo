@@ -1,11 +1,13 @@
 # PRD: OpenShift Event Handling для `@PodLogger`
 
-**Статус:** контракт на разработку, слой ещё не реализован.  
-**Модуль внедрения:** `junit-pod-logger`  
+**Статус:** реализовано в `junit-pod-logger` (as-built).  
+**Канонический документ фичи:** этот файл (`docs/feature/OpenShiftEventHandling/OpenShiftEventHandlingPRD.md`).  
+**Общий PRD проекта:** [`docs/prd/podLoggerJunitDemoPRD.md`](../../prd/podLoggerJunitDemoPRD.md).  
+**Смежная фича:** [`PersistentLogStorePRD.md`](../PersistentLogStore/PersistentLogStorePRD.md).  
+**Модуль:** `junit-pod-logger`  
 **Клиент:** fabric8 `openshift-client` **6.13.4** (`io.fabric8.openshift.client.OpenShiftClient`)  
-**Источник:** уточнение после отказа от записи в `oc logs`; публикация/потребление Kubernetes Events, health, Allure, fail-fast.
 
-Этот документ **заменяет** предыдущую редакцию того же файла. Решения, которые перевернуты, перечислены в §2 — их нельзя тащить из старого текста при реализации.
+Контракт ниже совпадает с кодом. Исторические черновики в `docs/propmtWorks` источником истины не являются.
 
 ---
 
@@ -132,11 +134,20 @@ Passed-тест: ни getEvents, ни Events-аттач, ни `relevantEvents`.
 
 ---
 
-## 5. As-is (код сейчас)
+## 5. As-built (код сейчас)
 
-`OpenshiftClient` — только `getLog()`. Extension: `beforeAll` store, `afterEach` → `attachLogsIfNeeded`, `afterAll` merge+finish. `CollectGate` — один флаг на Allure+SQLite. `PodLogDto` без Events. `LogAllureAttachmentService.attachJson` принимает только `List<PodLogDto>`. `TestWatcher` объявлен, счётчиков нет.
+Реализовано в `junit-pod-logger`:
 
-Нельзя сломать: `getLog()`, per-invocation Allure logs, единый `collectOnFailOnly` для логов, fail-fast `startTestRun` в `beforeAll`, ошибки collect не меняют статус **текущего** теста (кроме stand-down abort **следующих**).
+- `OpenshiftClient` — `getLog()`, `getEvents` / `getEvents(from,to)`, `publishPodEvent`, `probePodAvailability` / `isPodAvailable`, `resolveTargetPod`.
+- `PodLoggerExtension` — хуки §4, счётчики TestWatcher, `STAND_UNAVAILABLE`, fail-fast в `beforeEach`.
+- `PodLoggerService.handleAfterEach` / `handleFailedInvocation` — Events только на fail; persist только если `available`; Allure Events если список непустой.
+- `CollectGate` — один флаг на Allure+SQLite логов. На failed CollectGate всегда true.
+- `PodLogDto.relevantEvents` — runtime/Allure; в SQLite колонки нет.
+- `LogAllureAttachmentService.attachEvents` — пустой список не аттачит.
+- `AllureSink` — обёртка для тестов.
+- Приёмка: `OpenshiftEventHandlingTest` (сценарии 1–5, кластер не нужен).
+
+Нельзя ломать: `getLog()`, per-invocation Allure logs, единый `collectOnFailOnly` для логов, fail-fast `startTestRun` в `beforeAll`, ошибки collect не меняют статус **текущего** теста (кроме stand-down abort **следующих**).
 
 ---
 
@@ -489,3 +500,15 @@ rules:
 ## 12. Вне v1
 
 Watch, `events.k8s.io/v1`, Events Node, exec в контейнер, marker-endpoint в demo-app, отдельная таблица events, per-test publish `TestFailed`.
+
+---
+
+## 13. As-built заметки (соответствие коду)
+
+| Тема | Как в коде |
+| --- | --- |
+| `OpenshiftClient` | Конкретный класс, не Java-interface. Тесты наследуют stub. |
+| `AllureSink` | Вынесен, чтобы EngineTestKit перехватывал аттачи. |
+| Ошибка probe в `PodLoggerService.probeAvailability` | Swallow → `PodAvailability.up()` (не лже-stand-down). |
+| Приёмка | `OpenshiftEventHandlingTest` + `OpenshiftEventHandlingHarness`, без Docker. |
+| README | Операционное описание тех же хуков и RBAC. |

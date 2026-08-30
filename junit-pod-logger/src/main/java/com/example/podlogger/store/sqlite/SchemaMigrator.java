@@ -6,11 +6,26 @@ import java.sql.Statement;
 
 import javax.sql.DataSource;
 
+/**
+ * Идемпотентная схема v1: таблицы {@code test_run} и {@code log_entry}, unique index дедупа
+ * и поисковые индексы. Колонки Events нет — {@code relevantEvents} в БД не хранятся.
+ *
+ * <p>{@code CREATE TABLE IF NOT EXISTS} / {@code CREATE INDEX IF NOT EXISTS}: повторный
+ * вызов на существующем файле безопасен.
+ */
 public final class SchemaMigrator {
 
+    /**
+     * Утилитный класс, экземпляры не создаются.
+     */
     private SchemaMigrator() {
     }
 
+    /**
+     * Накатывает DDL. Падение — {@link IllegalStateException}.
+     *
+     * @param dataSource открытый SQLite DataSource
+     */
     public static void migrate(DataSource dataSource) {
         try (Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement()) {
             statement.execute("""

@@ -12,6 +12,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Сериализует логи и Events в pretty JSON и отдаёт в {@link AllureSink}.
+ * Persistence не выполняет. Ошибки сериализации/аттача глотаются: тест из-за Allure не краснеет.
+ */
 @Component
 @RequiredArgsConstructor
 public class LogAllureAttachmentService {
@@ -21,6 +25,13 @@ public class LogAllureAttachmentService {
     private final ObjectMapper objectMapper;
     private final AllureSink allureSink;
 
+    /**
+     * Аттач {@code pod-logs-*}. Пустой список всё равно сериализуется в {@code []}
+     * (вызов идёт только если collect решил аттачить).
+     *
+     * @param attachmentName имя аттача
+     * @param logs           срез окна; может содержать {@code relevantEvents}
+     */
     public void attachJson(String attachmentName, List<PodLogDto> logs) {
         try {
             String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(logs);
@@ -30,6 +41,13 @@ public class LogAllureAttachmentService {
         }
     }
 
+    /**
+     * Аттач {@code pod-events-*}. {@code null} или пустой список — no-op
+     * (пустой Events-аттач запрещён контрактом).
+     *
+     * @param attachmentName имя аттача
+     * @param events         Events окна fail
+     */
     public void attachEvents(String attachmentName, List<PodEventDto> events) {
         if (events == null || events.isEmpty()) {
             return;
@@ -42,6 +60,12 @@ public class LogAllureAttachmentService {
         }
     }
 
+    /**
+     * Заменяет символы, небезопасные в имени аттача, на {@code _}.
+     *
+     * @param displayName JUnit display name
+     * @return sanitized строка
+     */
     public static String sanitize(String displayName) {
         return displayName.replaceAll("[^a-zA-Z0-9._-]", "_");
     }

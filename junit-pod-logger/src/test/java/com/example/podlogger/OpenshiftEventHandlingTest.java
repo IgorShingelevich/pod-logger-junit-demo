@@ -49,18 +49,34 @@ import io.fabric8.kubernetes.api.model.EventBuilder;
 
 import javax.sql.DataSource;
 
+/**
+ * Приёмка OpenShift Event Handling без кластера (сценарии 1–5 PRD):
+ * publish/get коды, Allure Events на fail, отсутствие пустого аттача,
+ * fail-fast по stand-down, красный health без abort.
+ *
+ * <p>Контракт: {@code docs/feature/OpenShiftEventHandling/OpenShiftEventHandlingPRD.md}.
+ */
 @DisplayName("OpenShift Event Handling Test")
 class OpenshiftEventHandlingTest {
 
+    /**
+     * Сбрасывает static-состояние harness между тестами.
+     */
     @BeforeEach
     void resetHarness() {
         OpenshiftEventHandlingHarness.reset();
     }
 
+    /**
+     * Сценарий 1 PRD: publish затем get, mapper {@code code=reason}, окно from..to.
+     */
     @Nested
     @DisplayName("1. Publish/get с кодами")
     class PublishGetCodes {
 
+        /**
+         * In-memory client: после publish в {@code getEvents} есть тот же {@code code}.
+         */
         @Test
         @DisplayName("publishPodEvent затем getEvents возвращает тот же code")
         void publishThenGetReturnsCode() {
@@ -73,6 +89,9 @@ class OpenshiftEventHandlingTest {
             assertEquals("stand down", events.get(0).getMessage());
         }
 
+        /**
+         * {@link PodEventMapper}: {@code code} копируется из {@code Event.reason}.
+         */
         @Test
         @DisplayName("G1: mapper code равен Event.reason")
         void mapperCopiesReasonAsCode() {
@@ -91,6 +110,9 @@ class OpenshiftEventHandlingTest {
             assertEquals("uid-1", dto.getUid());
         }
 
+        /**
+         * Окно не включает Events вне интервала.
+         */
         @Test
         @DisplayName("G2: окно from..to отсекает события вне интервала")
         void windowExcludesEventsOutsideRange() {
@@ -103,6 +125,9 @@ class OpenshiftEventHandlingTest {
         }
     }
 
+    /**
+     * Сценарий 2: fail + непустые Events → аттач {@code pod-events-*} и {@code relevantEvents} в логах.
+     */
     @Nested
     @DisplayName("2. Fail + Events → Allure")
     class FailWithEventsAttachesToAllure {
@@ -110,6 +135,9 @@ class OpenshiftEventHandlingTest {
         @TempDir
         Path tempDir;
 
+        /**
+         * A1/A3/P1/P2: Events-аттач с кодом, логи с {@code relevantEvents}, ровно два lifecycle publish.
+         */
         @Test
         @DisplayName("упавший тест аттачит pod-events с code и relevantEvents в логах")
         void failedTestAttachesEventsWithCode() {
@@ -136,6 +164,9 @@ class OpenshiftEventHandlingTest {
         }
     }
 
+    /**
+     * Сценарий 3 / A2: пустой {@code getEvents} — нет Events-аттача, логи всё равно есть.
+     */
     @Nested
     @DisplayName("3. Fail + нет Events → нет аттача")
     class FailWithoutEventsDoesNotAttach {
@@ -143,6 +174,9 @@ class OpenshiftEventHandlingTest {
         @TempDir
         Path tempDir;
 
+        /**
+         * Пустой список Events не создаёт {@code pod-events-*}.
+         */
         @Test
         @DisplayName("пустой getEvents не создаёт pod-events аттач")
         void failedTestWithoutEventsSkipsEventsAttachment() {
@@ -157,6 +191,9 @@ class OpenshiftEventHandlingTest {
         }
     }
 
+    /**
+     * Сценарий 4 / F1/F2: stand-down abort'ит второй тест, первый остаётся AssertionError.
+     */
     @Nested
     @DisplayName("4. Stand-down → fail-fast")
     class StandDownFailFast {
@@ -164,6 +201,9 @@ class OpenshiftEventHandlingTest {
         @TempDir
         Path tempDir;
 
+        /**
+         * Второй метод не доходит до тела; в Allure есть и Events, и логи.
+         */
         @Test
         @DisplayName("stand-down Event останавливает второй тест, первый остаётся исходным fail")
         void standDownAbortsRemainingTests() {
@@ -189,6 +229,9 @@ class OpenshiftEventHandlingTest {
         }
     }
 
+    /**
+     * Сценарий 5 / F3/H4: health red без stand-down — второй тест бежит, persist skip.
+     */
     @Nested
     @DisplayName("5. Health-only red → нет fail-fast")
     class HealthRedNoFailFast {
@@ -196,6 +239,9 @@ class OpenshiftEventHandlingTest {
         @TempDir
         Path tempDir;
 
+        /**
+         * Второй тест successful; {@code log_entry} для {@code firstFails} нет.
+         */
         @Test
         @DisplayName("красный health без stand-down Event не abort'ит прогон и не persist'ит invocation")
         void healthRedDoesNotFailFastAndSkipsPersist() {
@@ -228,10 +274,16 @@ class OpenshiftEventHandlingTest {
         }
     }
 
+    /**
+     * G3/G4: matcher кодов и паттернов message; lifecycle и Pulled не stand-down.
+     */
     @Nested
     @DisplayName("StandDownEventMatcher")
     class MatcherCases {
 
+        /**
+         * Maintenance / StandUnavailable / Evicted матчятся.
+         */
         @Test
         @DisplayName("G4: Maintenance / StandUnavailable / Evicted — match")
         void standDownCodesMatch() {
@@ -240,6 +292,9 @@ class OpenshiftEventHandlingTest {
             assertEquals(1, StandDownEventMatcher.match(List.of(podEvent("Evicted"))).size());
         }
 
+        /**
+         * TestRunStarted / TestRunFinished / Pulled не матчятся.
+         */
         @Test
         @DisplayName("G3: TestRunStarted / TestRunFinished / Pulled — не stand-down")
         void lifecycleAndNoiseDoNotMatch() {
@@ -248,6 +303,9 @@ class OpenshiftEventHandlingTest {
             assertTrue(StandDownEventMatcher.match(List.of(podEvent("Pulled"))).isEmpty());
         }
 
+        /**
+         * Подстрока {@code maintenance} в message.
+         */
         @Test
         @DisplayName("pattern maintenance в message")
         void messagePatternMatches() {
@@ -260,10 +318,16 @@ class OpenshiftEventHandlingTest {
         }
     }
 
+    /**
+     * Jackson сериализует {@code relevantEvents} в JSON лога.
+     */
     @Nested
     @DisplayName("PodLogDto.relevantEvents JSON")
     class DtoSerialization {
 
+        /**
+         * Поле присутствует в JSON вместе с кодом Event.
+         */
         @Test
         @DisplayName("поле relevantEvents сериализуется")
         void relevantEventsAppearInJson() throws Exception {
@@ -278,10 +342,23 @@ class OpenshiftEventHandlingTest {
         }
     }
 
+    /**
+     * Короткий builder Event для matcher-тестов.
+     *
+     * @param code reason/code
+     * @return DTO
+     */
     private static PodEventDto podEvent(String code) {
         return PodEventDto.builder().code(code).reason(code).message(code).build();
     }
 
+    /**
+     * Запускает один sample и проверяет ровно один successful или failed тест.
+     *
+     * @param tempDir        каталог SQLite
+     * @param sample         harness-класс
+     * @param expectFailure  ожидаемый fail
+     */
     private void runSample(Path tempDir, Class<?> sample, boolean expectFailure) {
         var events = runClass(tempDir, sample);
         if (expectFailure) {
@@ -291,6 +368,13 @@ class OpenshiftEventHandlingTest {
         }
     }
 
+    /**
+     * EngineTestKit на отдельном файле SQLite ({@code pod.logger.store-path}).
+     *
+     * @param tempDir каталог
+     * @param sample  класс
+     * @return test events
+     */
     private Events runClass(Path tempDir, Class<?> sample) {
         Path db = tempDir.resolve("pod-logger-store.sqlite");
         String previous = System.getProperty(StorePathResolver.SYSTEM_PROPERTY);

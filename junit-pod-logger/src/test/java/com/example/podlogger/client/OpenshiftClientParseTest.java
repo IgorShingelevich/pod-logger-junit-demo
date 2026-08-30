@@ -13,8 +13,14 @@ import com.example.podlogger.parser.JsonLogParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+/**
+ * Юнит парсера без кластера: {@link JsonLogParser} на смешанном dump.
+ */
 class OpenshiftClientParseTest {
 
+    /**
+     * JSON-строки становятся DTO, preamble и не-JSON пропускаются.
+     */
     @Test
     @DisplayName("проверка парсинга JSON строк и пропуска шумов")
     void parsesJsonLinesAndSkipsNoise() {

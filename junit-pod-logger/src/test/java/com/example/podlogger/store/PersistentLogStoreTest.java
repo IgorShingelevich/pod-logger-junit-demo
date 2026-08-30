@@ -35,22 +35,40 @@ import com.example.podlogger.store.sqlite.SqliteDataSourceFactory;
 import com.example.podlogger.store.sqlite.SqliteLogStoreRepository;
 import com.example.podlogger.store.sqlite.SqliteTestRunRepository;
 
+/**
+ * Приёмка Persistent Log Store без кластера: запись/чтение SQLite, фильтры {@link LogQuery},
+ * retention, gate {@code collectOnFailOnly} через EngineTestKit + {@link PersistentLogStoreHarness}.
+ *
+ * <p>Контракт: {@code docs/feature/PersistentLogStore/PersistentLogStorePRD.md}.
+ */
 @DisplayName("persistent log store test")
 class PersistentLogStoreTest {
 
+    /** Timestamp ERROR-строки ST (Unknown SKU). */
     private static final LocalDateTime T1 = LocalDateTime.of(2026, 1, 1, 10, 0, 0, 0);
+    /** Timestamp INFO-строки ST. */
     private static final LocalDateTime T2 = LocalDateTime.of(2026, 1, 1, 11, 0, 0, 0);
+    /** Timestamp ERROR-строки DEV. */
     private static final LocalDateTime T3 = LocalDateTime.of(2026, 1, 1, 12, 0, 0, 0);
 
+    /** Временный каталог SQLite этого теста. */
     @TempDir
     Path tempDir;
 
+    /** DataSource текущего setUp (для backdate SQL). */
     private DataSource dataSource;
+    /** Store прогонов над temp DB. */
     private TestRunStore testRunStore;
+    /** Store логов над temp DB. */
     private PodStoreService podStoreService;
+    /** Сидированный ST-прогон. */
     private UUID stRunId;
+    /** Сидированный DEV-прогон. */
     private UUID devRunId;
 
+    /**
+     * Создаёт временный SQLite-файл, накатывает схему, сидирует ST и DEV прогоны.
+     */
     @BeforeEach
     void setUp() {
         Path db = tempDir.resolve("pod-logger-store.sqlite");
@@ -63,6 +81,9 @@ class PersistentLogStoreTest {
         seed();
     }
 
+    /**
+     * {@code startTestRun} пишет STARTED без {@code finishedAt}; {@code finishTestRun} закрывает run.
+     */
     @Test
     @DisplayName("запись и чтение: start/finish test run")
     void shouldStartAndFinishTestRun() {
@@ -75,6 +96,9 @@ class PersistentLogStoreTest {
         assertEquals("FINISHED", finished.getStatus());
     }
 
+    /**
+     * {@code saveLogs}/{@code getLogs(testRunId)} возвращают контекст run (имя, environment).
+     */
     @Test
     @DisplayName("запись и чтение: saveLogs / getLogs(testRunId)")
     void shouldSaveLogsAndGetByTestRunId() {
@@ -87,6 +111,9 @@ class PersistentLogStoreTest {
         assertEquals(EnvironmentType.ST, logs.get(0).getEnvironmentType());
     }
 
+    /**
+     * Фильтр по закрытому интервалу timestamp не отдаёт записи после {@code to}.
+     */
     @Test
     @DisplayName("фильтр по времени")
     void shouldFilterByTimeRange() {
@@ -95,6 +122,9 @@ class PersistentLogStoreTest {
         assertTrue(logs.stream().noneMatch(item -> item.getTimestamp().isAfter(T2)));
     }
 
+    /**
+     * Environment отсекает чужой стенд даже при том же {@code testRunId}.
+     */
     @Test
     @DisplayName("фильтр по environment")
     void shouldFilterByEnvironment() {
@@ -108,6 +138,9 @@ class PersistentLogStoreTest {
         assertTrue(mismatch.isEmpty());
     }
 
+    /**
+     * Suite + environment.
+     */
     @Test
     @DisplayName("фильтр suite + environment")
     void shouldFilterBySuiteAndEnvironment() {
@@ -115,6 +148,9 @@ class PersistentLogStoreTest {
         assertEquals(2, logs.size());
     }
 
+    /**
+     * Имя прогона + suite + environment; несовпавший environment — пусто.
+     */
     @Test
     @DisplayName("фильтр runName + suite + environment")
     void shouldFilterByRunNameSuiteEnvironment() {
@@ -123,6 +159,9 @@ class PersistentLogStoreTest {
         assertTrue(podStoreService.getLogs("st-regression", "orders-suite", EnvironmentType.DEV).isEmpty());
     }
 
+    /**
+     * {@link LogQuery} по related test class/method.
+     */
     @Test
     @DisplayName("фильтр relatedTestClass / relatedTestMethod")
     void shouldFilterByRelatedTestClassAndMethod() {
@@ -133,6 +172,9 @@ class PersistentLogStoreTest {
         assertEquals(2, logs.size());
     }
 
+    /**
+     * Комбинация environment + level + messageContains.
+     */
     @Test
     @DisplayName("комбинированный LogQuery")
     void shouldFilterByLogQueryCombined() {
@@ -145,6 +187,9 @@ class PersistentLogStoreTest {
         assertEquals("Unknown SKU", logs.get(0).getMessage());
     }
 
+    /**
+     * {@code getLogsForWholeRun} совпадает с {@code getLogs(testRunId)} по кардинальности.
+     */
     @Test
     @DisplayName("getLogsForWholeRun")
     void shouldGetLogsForWholeRun() {
@@ -152,6 +197,9 @@ class PersistentLogStoreTest {
         assertEquals(1, podStoreService.getLogsForWholeRun(devRunId).size());
     }
 
+    /**
+     * Повторный {@code saveLogs} той же строки не создаёт дубль (unique fingerprint).
+     */
     @Test
     @DisplayName("повторный save не создаёт дубли")
     void shouldDeduplicateOnResave() {
@@ -159,6 +207,9 @@ class PersistentLogStoreTest {
         assertEquals(2, podStoreService.getLogs(stRunId).size());
     }
 
+    /**
+     * {@code saveLogs(List)} без {@code testRunId} на записи — {@link IllegalArgumentException}.
+     */
     @Test
     @DisplayName("save без testRunId отклоняется")
     void shouldRejectSaveWithoutTestRunId() {
@@ -170,6 +221,9 @@ class PersistentLogStoreTest {
         assertThrows(IllegalArgumentException.class, () -> podStoreService.saveLogs(List.of(orphan)));
     }
 
+    /**
+     * {@code deleteOlderThan} удаляет только закрытый старый run; открытый старый и свежий живы.
+     */
     @Test
     @DisplayName("deleteOlderThan удаляет только закрытые старые run")
     void shouldDeleteOlderThanRemovesClosedRunsOnly() throws Exception {
@@ -186,6 +240,9 @@ class PersistentLogStoreTest {
         assertTrue(testRunStore.getTestRun(devRunId).isPresent());
     }
 
+    /**
+     * Зелёный класс с {@code collectOnFailOnly=true}: {@code test_run} есть, {@code log_entry} нет.
+     */
     @Test
     @DisplayName("зелёный класс с collectOnFailOnly не пишет log_entry")
     void shouldSkipPersistWhenCollectOnFailOnlyAndPassed() {
@@ -199,6 +256,10 @@ class PersistentLogStoreTest {
         assertFalse(bundle.runs.getTestRuns("persistent-log-store-passed").isEmpty());
     }
 
+    /**
+     * Упавший класс с {@link com.example.podlogger.PodLogger}: строки читаются из SQLite
+     * с related test и {@code testFailed=true}.
+     */
     @Test
     @DisplayName("упавший класс с @PodLogger пишет строки, которые читаются из SQLite")
     void extensionOnFailedClassPersistsLogsThatCanBeRead() {
@@ -225,6 +286,9 @@ class PersistentLogStoreTest {
         assertNotNull(runs.get(0).getFinishedAt());
     }
 
+    /**
+     * Два прогона (ST с двумя логами, DEV с одним) для фильтров.
+     */
     private void seed() {
         stRunId = testRunStore.startTestRun(TestRunDto.builder()
                 .testRunName("st-regression")
@@ -244,6 +308,7 @@ class PersistentLogStoreTest {
         podStoreService.saveLogs(devRunId, List.of(devError()));
     }
 
+    /** ERROR-строка ST-прогона (Unknown SKU). */
     private PodLogDto stError() {
         return PodLogDto.builder()
                 .timestamp(T1)
@@ -257,6 +322,7 @@ class PersistentLogStoreTest {
                 .build();
     }
 
+    /** INFO-строка ST-прогона. */
     private PodLogDto stInfo() {
         return PodLogDto.builder()
                 .timestamp(T2)
@@ -270,6 +336,7 @@ class PersistentLogStoreTest {
                 .build();
     }
 
+    /** ERROR-строка DEV-прогона. */
     private PodLogDto devError() {
         return PodLogDto.builder()
                 .timestamp(T3)
@@ -282,6 +349,12 @@ class PersistentLogStoreTest {
                 .build();
     }
 
+    /**
+     * Сдвигает {@code started_at} напрямую в SQL — для сценария retention.
+     *
+     * @param testRunId id прогона
+     * @param startedAt новое время старта
+     */
     private void backdateStartedAt(UUID testRunId, LocalDateTime startedAt) throws Exception {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(
@@ -292,6 +365,13 @@ class PersistentLogStoreTest {
         }
     }
 
+    /**
+     * Запускает sample-класс через EngineTestKit на отдельном файле SQLite.
+     *
+     * @param db            путь к БД
+     * @param sample        {@code @PodLogger} sample из harness
+     * @param expectFailure ожидаемый исход единственного теста
+     */
     private void runWithStore(Path db, Class<?> sample, boolean expectFailure) {
         String previous = System.getProperty(StorePathResolver.SYSTEM_PROPERTY);
         System.setProperty(StorePathResolver.SYSTEM_PROPERTY, db.toAbsolutePath().toString());
@@ -314,6 +394,12 @@ class PersistentLogStoreTest {
         }
     }
 
+    /**
+     * Открывает уже существующий файл БД сервисами store (после прогона EngineTestKit).
+     *
+     * @param db путь к SQLite
+     * @return пара TestRunStore + PodStoreService
+     */
     private StoreBundle open(Path db) {
         DataSource ds = SqliteDataSourceFactory.create(db);
         SchemaMigrator.migrate(ds);
@@ -324,6 +410,7 @@ class PersistentLogStoreTest {
                 new DefaultPodStoreService(logRepository, runRepository));
     }
 
+    /** Пара store'ов над одним DataSource. */
     private record StoreBundle(TestRunStore runs, PodStoreService store) {
     }
 }

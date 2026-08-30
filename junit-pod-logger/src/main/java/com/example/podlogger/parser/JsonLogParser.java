@@ -12,6 +12,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Построчный JSON-парсер: берёт только строки, начинающиеся с {@code \{},
+ * десериализует в {@link PodLogDto}. Невалидный JSON логируется на debug и пропускается.
+ *
+ * <p>Поля контекста прогона из stdout не приходят и здесь не заполняются.
+ */
 @Component
 @RequiredArgsConstructor
 public class JsonLogParser implements LogParser {
@@ -20,6 +26,9 @@ public class JsonLogParser implements LogParser {
 
     private final ObjectMapper objectMapper;
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<PodLogDto> parse(String rawDump) {
         List<PodLogDto> events = new ArrayList<>();

@@ -26,28 +26,55 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.openshift.client.OpenShiftClient;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Runtime-gateway к Kubernetes/OpenShift API через fabric8 {@link OpenShiftClient}.
+ *
+ * <p>Умеет: найти целевую под по namespace+label, снять {@code pods/log},
+ * list/create core/v1 Events ({@code client.v1().events()}, не {@code events.k8s.io}),
+ * probe доступности (stand-down Event → Ready → опциональный HTTP health).
+ *
+ * <p>Не знает про SQLite, Allure и JUnit. Ошибки list/publish глотаются:
+ * list → пустой список, publish → {@code null}. Это не stand-down.
+ *
+ * <p>Парсинг stdout делегирован {@link LogParser}; dump kube-preamble не JSON — пропускается.
+ */
 @RequiredArgsConstructor
 public class OpenshiftClient {
 
     private static final Logger log = LoggerFactory.getLogger(OpenshiftClient.class);
+    /** Таймаут connect и request HTTP health (шаг 3 probe). */
     private static final Duration HTTP_HEALTH_TIMEOUT = Duration.ofSeconds(2);
 
+    /** fabric8-адаптер; в unit-тестах может быть {@code null}. */
     private final OpenShiftClient fabric8;
+    /** Namespace, selector, health URL, stand-down. */
     private final PodLoggerProperties properties;
+    /** Парсер stdout поды. */
     private final LogParser logParser;
+    /** JDK-клиент для опционального HTTP health. */
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(HTTP_HEALTH_TIMEOUT)
             .build();
 
     /**
-     * Fetches the full pod log dump as one string from the Kubernetes API, then
-     * parses JSON lines into {@link PodLogDto}.
+     * Снимает полный dump {@code GET .../pods/{name}/log} и парсит JSON-строки в DTO.
+     * Сигнатура стабильна: потребители и тесты опираются на {@code List<PodLogDto> getLog()}.
+     *
+     * @return распарсенные события; шум и не-JSON строки отброшены
+     * @throws IllegalStateException если fabric8 не сконфигурирован или под не найдена
      */
     public List<PodLogDto> getLog() {
         String raw = fetchRawLog();
         return logParser.parse(raw);
     }
 
+    /**
+     * Ищет поды по {@code namespace} + {@code podLabelSelector} ({@code key=value}).
+     * Предпочитает Ready+Running; если таких нет — берёт первую из списка.
+     *
+     * @return fabric8 Pod
+     * @throws IllegalStateException нет клиента или нет под с селектором
+     */
     public Pod resolveTargetPod() {
         if (fabric8 == null) {
             throw new IllegalStateException("OpenShift client is not configured");
@@ -69,6 +96,12 @@ public class OpenshiftClient {
                 .orElse(pods.get(0));
     }
 
+    /**
+     * Все core/v1 Events с {@code involvedObject} = целевая под.
+     * Ошибка list → пустой список (не throw, не stand-down).
+     *
+     * @return DTO; {@code code} равен k8s {@code reason}
+     */
     public List<PodEventDto> getEvents() {
         try {
             Pod pod = resolveTargetPod();
@@ -79,12 +112,30 @@ public class OpenshiftClient {
         }
     }
 
+    /**
+     * {@link #getEvents()} с фильтром по timestamp на клиенте
+     * ({@code lastTimestamp} иначе {@code eventTime} иначе {@code creationTimestamp}).
+     *
+     * @param fromInclusive нижняя граница UTC включительно
+     * @param toInclusive   верхняя граница UTC включительно
+     * @return события внутри окна
+     */
     public List<PodEventDto> getEvents(LocalDateTime fromInclusive, LocalDateTime toInclusive) {
         return getEvents().stream()
                 .filter(event -> PodEventMapper.inWindow(event, fromInclusive, toInclusive))
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Best-effort create Event на целевой поде: {@code generateName=pod-logger-},
+     * {@code involvedObject.kind=Pod}. Ошибка create логируется, возвращается {@code null},
+     * suite не валится.
+     *
+     * @param type    {@code Normal} или {@code Warning}
+     * @param reason  PascalCase-код ({@code TestRunStarted}, {@code Maintenance}, …)
+     * @param message без секретов
+     * @return созданный DTO или {@code null}
+     */
     public PodEventDto publishPodEvent(String type, String reason, String message) {
         try {
             if (fabric8 == null) {
@@ -125,10 +176,22 @@ public class OpenshiftClient {
         }
     }
 
+    /**
+     * Короткий boolean поверх {@link #probePodAvailability()}.
+     *
+     * @return {@code true} только если нет stand-down Event и health зелёный
+     */
     public boolean isPodAvailable() {
         return probePodAvailability().isAvailable();
     }
 
+    /**
+     * Short-circuit probe: (1) stand-down Events по всем текущим Events поды —
+     * health HTTP не обязателен; (2) Kubernetes Ready; (3) HTTP GET {@code healthCheckUrl},
+     * если URL непустой. Тело 2xx, матчащее stand-down pattern, считается красным health.
+     *
+     * @return детальный статус; {@code available=true} только на шаге 4
+     */
     public PodAvailability probePodAvailability() {
         List<PodEventDto> events;
         try {
@@ -168,6 +231,11 @@ public class OpenshiftClient {
         return PodAvailability.up();
     }
 
+    /**
+     * Сырой dump логов выбранной поды. Для тестов парсера можно обойти через {@link #parseLogDump}.
+     *
+     * @return текст {@code pods/log}
+     */
     String fetchRawLog() {
         log.debug("Fetching logs from namespace {} with selector {}", properties.getNamespace(), properties.getPodLabelSelector());
         Pod ready = resolveTargetPod();
@@ -177,10 +245,22 @@ public class OpenshiftClient {
         return fabric8.pods().inNamespace(namespace).withName(name).getLog();
     }
 
+    /**
+     * Делегат {@link LogParser#parse(String)} — оставлен для тестов без кластера.
+     *
+     * @param raw dump stdout
+     * @return DTO-строки
+     */
     List<PodLogDto> parseLogDump(String raw) {
         return logParser.parse(raw);
     }
 
+    /**
+     * List Events {@code involvedObject} = переданная под, map в DTO.
+     *
+     * @param pod целевая под
+     * @return список; пустой если клиент/под/items отсутствуют
+     */
     List<PodEventDto> listEventsForPod(Pod pod) {
         if (fabric8 == null || pod == null || pod.getMetadata() == null) {
             return List.of();
@@ -212,6 +292,13 @@ public class OpenshiftClient {
         return result;
     }
 
+    /**
+     * HTTP GET с таймаутом 2 с. Не-2xx или тело с stand-down pattern → {@code false}.
+     * Interrupt и сетевые ошибки → {@code false} (красное health, не stand-down Event).
+     *
+     * @param url абсолютный URL
+     * @return {@code true} если 2xx и тело не матчит pattern
+     */
     boolean checkHttpHealth(String url) {
         try {
             HttpRequest request = HttpRequest.newBuilder(URI.create(url))
@@ -235,6 +322,12 @@ public class OpenshiftClient {
         }
     }
 
+    /**
+     * Kubernetes Ready: phase {@code Running} и все контейнеры {@code ready=true}.
+     *
+     * @param pod объект API
+     * @return {@code true} если под готова принимать трафик
+     */
     static boolean isReady(Pod pod) {
         return pod.getStatus() != null
                 && "Running".equals(pod.getStatus().getPhase())
@@ -242,6 +335,13 @@ public class OpenshiftClient {
                 && pod.getStatus().getContainerStatuses().stream().allMatch(cs -> Boolean.TRUE.equals(cs.getReady()));
     }
 
+    /**
+     * Режет {@code key=value} на два токена.
+     *
+     * @param selector строка аннотации
+     * @return {@code [key, value]}
+     * @throws IllegalArgumentException если нет {@code =} или ключ пустой
+     */
     static String[] splitSelector(String selector) {
         int eq = selector.indexOf('=');
         if (eq <= 0) {

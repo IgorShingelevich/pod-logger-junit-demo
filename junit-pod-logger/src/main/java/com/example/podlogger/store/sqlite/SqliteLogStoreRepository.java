@@ -21,14 +21,22 @@ import com.example.podlogger.store.dto.LogQuery;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * SQLite-реализация {@link LogStoreRepository}: {@code INSERT OR IGNORE} и динамический SELECT
+ * по {@link LogQuery}. Колонку {@code relevantEvents} не читает и не пишет.
+ */
 @Repository
 @RequiredArgsConstructor
 public class SqliteLogStoreRepository implements LogStoreRepository {
 
+    /** Потолок выборки, если {@link LogQuery#getLimit()} не задан. */
     static final int DEFAULT_LIMIT = 10_000;
 
     private final DataSource dataSource;
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void saveAll(List<PodLogDto> logs) {
         if (logs == null || logs.isEmpty()) {
@@ -84,6 +92,11 @@ public class SqliteLogStoreRepository implements LogStoreRepository {
         });
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IllegalArgumentException если {@code from} позже {@code to}
+     */
     @Override
     public List<PodLogDto> find(LogQuery query) {
         LogQuery q = query == null ? new LogQuery() : query;
@@ -145,6 +158,14 @@ public class SqliteLogStoreRepository implements LogStoreRepository {
         });
     }
 
+    /**
+     * Добавляет {@code AND column = ?}, если value непустое.
+     *
+     * @param sql    копится WHERE
+     * @param params копится bind
+     * @param column квалифицированное имя колонки
+     * @param value  значение или {@code null}
+     */
     private static void addEquals(StringBuilder sql, List<Object> params, String column, String value) {
         if (value != null && !value.isBlank()) {
             sql.append(" AND ").append(column).append(" = ?");
@@ -152,10 +173,23 @@ public class SqliteLogStoreRepository implements LogStoreRepository {
         }
     }
 
+    /**
+     * Экранирование {@code %}, {@code _} и {@code \} для LIKE ... ESCAPE '\\'.
+     *
+     * @param value сырая подстрока
+     * @return безопасный паттерн
+     */
     private static String escapeLike(String value) {
         return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
 
+    /**
+     * Маппинг JOIN {@code log_entry} + {@code test_run} в DTO. {@code relevantEvents} остаётся null.
+     *
+     * @param rs текущая строка
+     * @return DTO
+     * @throws SQLException ошибка драйвера
+     */
     private static PodLogDto map(ResultSet rs) throws SQLException {
         Integer failed = (Integer) rs.getObject("test_failed");
         String runName = rs.getString("test_run_name");

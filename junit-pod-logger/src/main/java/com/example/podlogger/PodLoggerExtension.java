@@ -19,21 +19,58 @@ import com.example.podlogger.client.PodAvailability;
 import com.example.podlogger.store.TestRunStore;
 import com.example.podlogger.store.dto.TestRunDto;
 
+/**
+ * JUnit 5 extension, подключаемый мета-аннотацией {@link PodLogger}.
+ *
+ * <p>Отвечает только за lifecycle тестового класса и invocation:
+ * старт/финиш test run, UTC-окно кейса, счётчики TestWatcher, флаг stand-down.
+ * SQL, парсинг dump и Fabric8-вызовы сюда не входят — их делает {@link PodLoggerService}.
+ *
+ * <p>Порядок хуков (контракт OpenShift Event Handling):
+ * <ol>
+ *   <li>{@code beforeAll} — applyAnnotation, {@code startTestRun}, publish {@code TestRunStarted},
+ *       {@code isPodAvailable}; stand-down → fail-fast класса;</li>
+ *   <li>{@code beforeEach} — abort если стенд недоступен, иначе запомнить {@code testStartUtc};</li>
+ *   <li>{@code afterEach} — {@code handleAfterEach}; при stand-down на fail выставить флаг,
+ *       из хука исключение не бросать (чтобы не затереть исходный assertion);</li>
+ *   <li>{@code afterAll} — merge логов прогона, publish {@code TestRunFinished}, {@code finishTestRun}.</li>
+ * </ol>
+ *
+ * <p>Ошибка {@code startTestRun} в {@code beforeAll} — fail-fast с пошаговым SLF4J.
+ * Ошибки collect/Allure/save статус текущего теста не меняют.
+ */
 public class PodLoggerExtension implements BeforeAllCallback, AfterAllCallback,
         BeforeEachCallback, AfterEachCallback, TestWatcher {
 
     private static final Logger log = LoggerFactory.getLogger(PodLoggerExtension.class);
 
+    /** Namespace JUnit Store, чтобы не пересекаться с SpringExtension. */
     static final Namespace STORE_NS = Namespace.create(PodLoggerExtension.class);
+    /** UTC-старт текущего invocation. */
     static final String START_KEY = "testStartUtc";
+    /** UUID строки {@code test_run}. */
     static final String TEST_RUN_ID_KEY = "testRunId";
+    /** {@code true}, если пойман stand-down Event — следующие {@code beforeEach} abort. */
     static final String STAND_UNAVAILABLE_KEY = "standUnavailable";
+    /** Код stand-down для текста {@code Stand unavailable: ...}. */
     static final String STAND_UNAVAILABLE_CODE_KEY = "standUnavailableCode";
+    /** Счётчик TestWatcher: успешные. */
     static final String PASSED_COUNT_KEY = "passedCount";
+    /** Счётчик TestWatcher: failed + aborted. */
     static final String FAILED_COUNT_KEY = "failedCount";
+    /** Счётчик TestWatcher: disabled. */
     static final String DISABLED_COUNT_KEY = "disabledCount";
+    /** Имя прогона для message {@code TestRunFinished}. */
     static final String TEST_RUN_NAME_KEY = "testRunName";
 
+    /**
+     * Старт прогона: metadata из аннотации, запись {@code test_run}, lifecycle Event, probe поды.
+     * Stand-down Event при включённом {@link PodLogger#failFastOnStandDownEvent()} бросает
+     * {@link IllegalStateException} уже здесь; {@code testRunId} к этому моменту уже в Store,
+     * поэтому {@code afterAll} всё равно опубликует {@code TestRunFinished}.
+     *
+     * @param context class-level ExtensionContext
+     */
     @Override
     public void beforeAll(ExtensionContext context) {
         String step = "resolve-metadata";
@@ -88,6 +125,13 @@ public class PodLoggerExtension implements BeforeAllCallback, AfterAllCallback,
         }
     }
 
+    /**
+     * Финиш прогона: merge persistent+runtime логов, publish {@code TestRunFinished}
+     * со счётчиками, {@code finishTestRun}. Если {@code testRunId} нет (упали до {@code put}) —
+     * no-op. Каждый шаг в своём try, чтобы один сбой не отменил остальные.
+     *
+     * @param context class-level ExtensionContext
+     */
     @Override
     public void afterAll(ExtensionContext context) {
         UUID testRunId = context.getStore(STORE_NS).get(TEST_RUN_ID_KEY, UUID.class);
@@ -116,6 +160,12 @@ public class PodLoggerExtension implements BeforeAllCallback, AfterAllCallback,
         }
     }
 
+    /**
+     * Если предыдущий fail поймал stand-down — бросает {@code Stand unavailable: <code>}
+     * и тело теста не выполняется. Иначе пишет UTC-старт invocation в Store.
+     *
+     * @param context method/invocation ExtensionContext
+     */
     @Override
     public void beforeEach(ExtensionContext context) {
         Boolean standDown = classStore(context).get(STAND_UNAVAILABLE_KEY, Boolean.class);
@@ -127,6 +177,13 @@ public class PodLoggerExtension implements BeforeAllCallback, AfterAllCallback,
         service(context).applyAnnotation(annotation(context));
     }
 
+    /**
+     * Снимает окно кейса и отдаёт его в {@link PodLoggerService#handleAfterEach}.
+     * При fail + stand-down Event выставляет {@code STAND_UNAVAILABLE} в class Store,
+     * но исключение из этого хука не бросает.
+     *
+     * @param context method/invocation ExtensionContext
+     */
     @Override
     public void afterEach(ExtensionContext context) {
         LocalDateTime start = context.getStore(STORE_NS).get(START_KEY, LocalDateTime.class);
@@ -141,40 +198,89 @@ public class PodLoggerExtension implements BeforeAllCallback, AfterAllCallback,
         }
     }
 
+    /**
+     * Увеличивает счётчик успешных тестов для message {@code TestRunFinished}.
+     *
+     * @param context завершившийся тест
+     */
     @Override
     public void testSuccessful(ExtensionContext context) {
         increment(classStore(context), PASSED_COUNT_KEY);
     }
 
+    /**
+     * Увеличивает {@code failed} (включая падения из-за {@code STAND_UNAVAILABLE} в {@code beforeEach}).
+     *
+     * @param context завершившийся тест
+     * @param cause   исходная причина fail
+     */
     @Override
     public void testFailed(ExtensionContext context, Throwable cause) {
         increment(classStore(context), FAILED_COUNT_KEY);
     }
 
+    /**
+     * Aborted считается как failed в message {@code TestRunFinished}.
+     *
+     * @param context завершившийся тест
+     * @param cause   причина abort
+     */
     @Override
     public void testAborted(ExtensionContext context, Throwable cause) {
         increment(classStore(context), FAILED_COUNT_KEY);
     }
 
+    /**
+     * Счётчик disabled; входит в {@code total = passed + failed + disabled}.
+     *
+     * @param context отключённый тест
+     * @param reason  причина disabled
+     */
     @Override
     public void testDisabled(ExtensionContext context, java.util.Optional<String> reason) {
         increment(classStore(context), DISABLED_COUNT_KEY);
     }
 
+    /**
+     * Атомарно для хука увеличивает integer в Store (отсутствие ключа = 0).
+     *
+     * @param store class-level Store
+     * @param key   ключ счётчика
+     */
     private static void increment(ExtensionContext.Store store, String key) {
         Integer current = store.get(key, Integer.class);
         store.put(key, current == null ? 1 : current + 1);
     }
 
+    /**
+     * Читает счётчик из class Store; {@code null} трактуется как 0.
+     *
+     * @param context любой дочерний контекст класса
+     * @param key     ключ счётчика
+     * @return текущее значение
+     */
     private static int count(ExtensionContext context, String key) {
         Integer value = context.getStore(STORE_NS).get(key, Integer.class);
         return value == null ? 0 : value;
     }
 
+    /**
+     * Store уровня тестового класса: parent контекста invocation, иначе сам context.
+     *
+     * @param context текущий хук
+     * @return class-level Store в {@link #STORE_NS}
+     */
     private static ExtensionContext.Store classStore(ExtensionContext context) {
         return context.getParent().orElse(context).getStore(STORE_NS);
     }
 
+    /**
+     * Читает {@link PodLogger} с тестового класса.
+     *
+     * @param context хук
+     * @return аннотация
+     * @throws IllegalStateException если аннотации нет
+     */
     private static PodLogger annotation(ExtensionContext context) {
         PodLogger annotation = context.getRequiredTestClass().getAnnotation(PodLogger.class);
         if (annotation == null) {
@@ -183,10 +289,22 @@ public class PodLoggerExtension implements BeforeAllCallback, AfterAllCallback,
         return annotation;
     }
 
+    /**
+     * Достаёт {@link PodLoggerService} из Spring TestContext.
+     *
+     * @param context хук со SpringExtension
+     * @return singleton сервиса
+     */
     private static PodLoggerService service(ExtensionContext context) {
         return SpringExtension.getApplicationContext(context).getBean(PodLoggerService.class);
     }
 
+    /**
+     * Достаёт {@link TestRunStore} из Spring TestContext.
+     *
+     * @param context хук со SpringExtension
+     * @return singleton store прогонов
+     */
     private static TestRunStore testRunStore(ExtensionContext context) {
         return SpringExtension.getApplicationContext(context).getBean(TestRunStore.class);
     }
