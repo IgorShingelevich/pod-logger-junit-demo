@@ -62,6 +62,20 @@ mvn -pl demo-tests allure:report
 - [`Jenkinsfile`](Jenkinsfile) — package, `docker build`, тесты (UNSTABLE из‑за ожидаемых fail), Allure.
 - Агент с Maven 17 + docker CLI: [`docker/jenkins/Dockerfile`](docker/jenkins/Dockerfile). Агенту нужен доступ к Docker socket (`/var/run/docker.sock`) для Testcontainers.
 
+## Planned Persistent Store
+
+Текущий код проекта уже умеет собирать runtime pod logs и прикладывать их к Allure на уровне каждого invocation через `@PodLogger`.
+
+Следующий архитектурный этап описан в [`docs/prd/podLoggerJunitDemoPRD.md`](docs/prd/podLoggerJunitDemoPRD.md):
+
+- отдельный `PodStoreService` для persistent pod logs;
+- `TestRunStore` для lifecycle `BeforeAll -> AfterAll`;
+- `SQLite` как локальное хранилище между прогонами;
+- historical queries по `testRunId`, времени, `testSuiteName`, `EnvironmentType` и `serviceType`;
+- разделение между per-test Allure attachments и persistent log retrieval.
+
+Пока этот persistent слой описан как целевая архитектура в PRD и не должен восприниматься как уже реализованная runtime-функция демо.
+
 ## Коды ошибок API
 
 | code | message в JSON и в логе поды |
