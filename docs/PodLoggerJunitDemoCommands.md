@@ -293,7 +293,19 @@ python -c "import sqlite3; p=r'C:\Users\V\pod-logger-junit-demo\demo-tests\targe
 
 ```powershell
 git status --short
+git branch -vv
+git log --oneline master..EventPolicy
+git log --oneline EventPolicy..master
 ```
+
+Влить `EventPolicy` в локальный `master` (fast-forward, если `master` не ушёл вперёд):
+
+```powershell
+git checkout master
+git merge EventPolicy
+```
+
+Зачем: перенести коммиты event-policy-ветки в главную. После merge `master` опережает `origin/master`; `git push` — отдельно, по явной просьбе.
 
 Сверка Event Handling в сессии (пути **на тот момент**; сейчас `docs/prd/` и `docs/EventHandling.PRD.md` не существуют):
 
