@@ -1,0 +1,12 @@
+target/
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.vscode/
+allure-results/
+allure-report/
+*.log
+.DS_Store
+demo-tests/src/test/resources/demo-api.tar
