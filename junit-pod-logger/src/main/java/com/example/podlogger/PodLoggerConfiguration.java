@@ -2,10 +2,14 @@ package com.example.podlogger;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.TypeExcludeFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
 
+import com.example.podlogger.allure.AllureSink;
+import com.example.podlogger.allure.DefaultAllureSink;
 import com.example.podlogger.client.OpenshiftClient;
 import com.example.podlogger.parser.LogParser;
 import com.example.podlogger.store.StorePathResolver;
@@ -20,7 +24,9 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import javax.sql.DataSource;
 
 @Configuration
-@ComponentScan(basePackages = "com.example.podlogger")
+@ComponentScan(
+        basePackages = "com.example.podlogger",
+        excludeFilters = @ComponentScan.Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class))
 public class PodLoggerConfiguration {
 
     @Bean
@@ -40,6 +46,12 @@ public class PodLoggerConfiguration {
             PodLoggerProperties properties,
             LogParser logParser) {
         return new OpenshiftClient(fabric8, properties, logParser);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(AllureSink.class)
+    public AllureSink allureSink() {
+        return new DefaultAllureSink();
     }
 
     @Bean

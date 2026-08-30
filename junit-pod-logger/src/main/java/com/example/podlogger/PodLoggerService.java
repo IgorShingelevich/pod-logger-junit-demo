@@ -17,7 +17,10 @@ import org.springframework.stereotype.Component;
 
 import com.example.podlogger.allure.LogAllureAttachmentService;
 import com.example.podlogger.client.OpenshiftClient;
+import com.example.podlogger.client.PodAvailability;
+import com.example.podlogger.client.PodEventDto;
 import com.example.podlogger.client.PodLogDto;
+import com.example.podlogger.event.PodEventReasons;
 import com.example.podlogger.store.FingerprintUtil;
 import com.example.podlogger.store.PodStoreService;
 import com.example.podlogger.store.TestRunStore;
@@ -53,6 +56,94 @@ public class PodLoggerService {
         if (!annotation.serviceType().isBlank()) {
             properties.setServiceType(annotation.serviceType());
         }
+        properties.setPublishLifecycleEvents(annotation.publishLifecycleEvents());
+        properties.setFailFastOnStandDownEvent(annotation.failFastOnStandDownEvent());
+        if (!annotation.healthCheckUrl().isBlank()) {
+            properties.setHealthCheckUrl(annotation.healthCheckUrl());
+        }
+        if (annotation.standDownEventCodes().length > 0) {
+            properties.setStandDownEventCodes(List.of(annotation.standDownEventCodes()));
+        }
+        if (annotation.standDownMessagePatterns().length > 0) {
+            properties.setStandDownMessagePatterns(List.of(annotation.standDownMessagePatterns()));
+        }
+    }
+
+    public PodAvailability handleAfterEach(
+            ExtensionContext context,
+            UUID testRunId,
+            LocalDateTime start,
+            LocalDateTime end,
+            boolean failed) {
+        if (!failed) {
+            attachLogsIfNeeded(context, testRunId, start, end, false);
+            return PodAvailability.up();
+        }
+        return handleFailedInvocation(context, testRunId, start, end);
+    }
+
+    public PodAvailability handleFailedInvocation(
+            ExtensionContext context,
+            UUID testRunId,
+            LocalDateTime start,
+            LocalDateTime end) {
+        LocalDateTime from = start == null ? LocalDateTime.now(ZoneOffset.UTC).minusSeconds(SKEW_SECONDS)
+                : start.minusSeconds(SKEW_SECONDS);
+        LocalDateTime to = end.plusSeconds(SKEW_SECONDS);
+
+        List<PodEventDto> events = List.of();
+        try {
+            events = openshiftClient.getEvents(from, to);
+        } catch (Exception e) {
+            log.error("Failed to get pod events for {}", context.getDisplayName(), e);
+        }
+        if (events == null) {
+            events = List.of();
+        }
+
+        PodAvailability availability = PodAvailability.up();
+        try {
+            availability = openshiftClient.probePodAvailability();
+        } catch (Exception e) {
+            log.error("Failed to probe pod availability for {}", context.getDisplayName(), e);
+        }
+        if (availability == null) {
+            availability = PodAvailability.up();
+        }
+
+        if (!events.isEmpty()) {
+            attachmentService.attachEvents(
+                    "pod-events-" + LogAllureAttachmentService.sanitize(context.getDisplayName()),
+                    events);
+        }
+
+        waitForLogFlush();
+
+        List<PodLogDto> window = List.of();
+        try {
+            window = collectRuntimeLogs(from, to);
+        } catch (Exception e) {
+            log.error("Failed to collect runtime pod logs for {}", context.getDisplayName(), e);
+        }
+        enrich(window, context, testRunId, true);
+        applyRelevantEvents(window, events);
+
+        if (availability.isAvailable()) {
+            persistLogs(testRunId, window, context);
+            attachmentService.attachJson(
+                    "pod-logs-" + LogAllureAttachmentService.sanitize(context.getDisplayName()),
+                    window);
+            log.info("Attached {} pod log events for {} (window {} .. {})",
+                    window.size(), context.getDisplayName(), from, to);
+        } else if (!window.isEmpty()) {
+            attachmentService.attachJson(
+                    "pod-logs-" + LogAllureAttachmentService.sanitize(context.getDisplayName()),
+                    window);
+            log.info("Attached {} pod logs without persist for unavailable pod {}",
+                    window.size(), context.getDisplayName());
+        }
+
+        return availability;
     }
 
     public void attachLogsIfNeeded(
@@ -71,11 +162,7 @@ public class PodLoggerService {
             return;
         }
 
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        waitForLogFlush();
 
         List<PodLogDto> window;
         try {
@@ -86,21 +173,43 @@ public class PodLoggerService {
         }
 
         enrich(window, context, testRunId, failed);
-
-        try {
-            if (testRunId != null) {
-                podStoreService.saveLogs(testRunId, window);
-            }
-        } catch (Exception e) {
-            log.error("Failed to persist pod logs for {}", context.getDisplayName(), e);
-        }
-
+        persistLogs(testRunId, window, context);
         attachmentService.attachJson(
                 "pod-logs-" + LogAllureAttachmentService.sanitize(context.getDisplayName()),
                 window);
         log.info("Attached {} pod log events for {} (window {} .. {})",
                 window.size(), context.getDisplayName(),
                 start.minusSeconds(SKEW_SECONDS), end.plusSeconds(SKEW_SECONDS));
+    }
+
+    public void publishTestRunStarted(UUID testRunId, String testRunName, String suiteName) {
+        if (!properties.isPublishLifecycleEvents()) {
+            return;
+        }
+        String message = "testRunName=" + nullToEmpty(testRunName)
+                + " testRunId=" + testRunId
+                + " suite=" + nullToEmpty(suiteName);
+        openshiftClient.publishPodEvent("Normal", PodEventReasons.TEST_RUN_STARTED, message);
+    }
+
+    public void publishTestRunFinished(String testRunName, int total, int passed, int failed) {
+        if (!properties.isPublishLifecycleEvents()) {
+            return;
+        }
+        String message = "testRunName=" + nullToEmpty(testRunName)
+                + " total=" + total
+                + " passed=" + passed
+                + " failed=" + failed;
+        openshiftClient.publishPodEvent("Normal", PodEventReasons.TEST_RUN_FINISHED, message);
+    }
+
+    public PodAvailability probeAvailability() {
+        try {
+            return openshiftClient.probePodAvailability();
+        } catch (Exception e) {
+            log.error("Failed to probe pod availability", e);
+            return PodAvailability.up();
+        }
     }
 
     public MergedLogResult collectAndMergeLogsForTestRun(UUID testRunId) {
@@ -180,6 +289,33 @@ public class PodLoggerService {
         return eq > 0 ? selector.substring(eq + 1) : selector;
     }
 
+    private void persistLogs(UUID testRunId, List<PodLogDto> window, ExtensionContext context) {
+        try {
+            if (testRunId != null) {
+                podStoreService.saveLogs(testRunId, window);
+            }
+        } catch (Exception e) {
+            log.error("Failed to persist pod logs for {}", context.getDisplayName(), e);
+        }
+    }
+
+    private static void applyRelevantEvents(List<PodLogDto> logs, List<PodEventDto> events) {
+        if (logs == null || events == null || events.isEmpty()) {
+            return;
+        }
+        for (PodLogDto entry : logs) {
+            entry.setRelevantEvents(events);
+        }
+    }
+
+    private static void waitForLogFlush() {
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     private void enrich(List<PodLogDto> logs, ExtensionContext context, UUID testRunId, boolean failed) {
         String testClass = context.getRequiredTestClass().getName();
         String testMethod = context.getTestMethod().map(method -> method.getName()).orElse(null);
@@ -237,5 +373,9 @@ public class PodLoggerService {
 
     private static String StoreTimeSafe(PodLogDto entry) {
         return entry.getTimestamp() == null ? "" : entry.getTimestamp().toString();
+    }
+
+    private static String nullToEmpty(String value) {
+        return value == null ? "" : value;
     }
 }

@@ -1,6 +1,7 @@
 package com.example.podlogger.client;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import com.example.podlogger.store.EnvironmentType;
@@ -50,4 +51,9 @@ public class PodLogDto {
 
     private String fingerprint;
     private String errorCategory;
+
+    /**
+     * Pod Events observed at the failing invocation. Runtime/Allure only; not persisted.
+     */
+    private List<PodEventDto> relevantEvents;
 }

@@ -13,7 +13,8 @@ import com.example.podlogger.store.EnvironmentType;
 /**
  * Collects Kubernetes/OpenShift pod logs for each test method (including each
  * {@code @ParameterizedTest} invocation). The same {@code collectOnFailOnly}
- * gate controls Allure attachments and SQLite persist.
+ * gate controls Allure attachments and SQLite persist for logs. Pod Events on
+ * a failed invocation are attached separately when present.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
@@ -37,4 +38,20 @@ public @interface PodLogger {
     EnvironmentType environmentType() default EnvironmentType.LOCAL;
 
     String serviceType() default "";
+
+    boolean publishLifecycleEvents() default true;
+
+    boolean failFastOnStandDownEvent() default true;
+
+    String healthCheckUrl() default "";
+
+    /**
+     * Empty means the library default stand-down codes.
+     */
+    String[] standDownEventCodes() default {};
+
+    /**
+     * Empty means the library default message patterns.
+     */
+    String[] standDownMessagePatterns() default {};
 }
