@@ -1,20 +1,17 @@
 package com.example.podlogger.client;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import com.example.podlogger.PodLoggerProperties;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.example.podlogger.parser.LogParser;
 
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.openshift.client.OpenShiftClient;
 import lombok.RequiredArgsConstructor;
 
-@Component
 @RequiredArgsConstructor
 public class OpenshiftClient {
 
@@ -22,7 +19,7 @@ public class OpenshiftClient {
 
     private final OpenShiftClient fabric8;
     private final PodLoggerProperties properties;
-    private final ObjectMapper objectMapper;
+    private final LogParser logParser;
 
     /**
      * Fetches the full pod log dump as one string from the Kubernetes API, then
@@ -30,7 +27,7 @@ public class OpenshiftClient {
      */
     public List<PodLogDto> getLog() {
         String raw = fetchRawLog();
-        return parseLogDump(raw);
+        return logParser.parse(raw);
     }
 
     String fetchRawLog() {
@@ -56,22 +53,7 @@ public class OpenshiftClient {
     }
 
     List<PodLogDto> parseLogDump(String raw) {
-        List<PodLogDto> events = new ArrayList<>();
-        if (raw == null || raw.isBlank()) {
-            return events;
-        }
-        for (String line : raw.split("\\R")) {
-            String trimmed = line.trim();
-            if (!trimmed.startsWith("{")) {
-                continue;
-            }
-            try {
-                events.add(objectMapper.readValue(trimmed, PodLogDto.class));
-            } catch (Exception e) {
-                log.debug("Skipping non-DTO log line: {}", trimmed);
-            }
-        }
-        return events;
+        return logParser.parse(raw);
     }
 
     private static boolean isReady(Pod pod) {

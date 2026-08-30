@@ -12,3 +12,7 @@ junit-pod-logger/allure-results/
 *.log
 .DS_Store
 demo-tests/src/test/resources/demo-api.tar
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
