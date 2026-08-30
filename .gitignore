@@ -7,6 +7,8 @@ target/
 .vscode/
 allure-results/
 allure-report/
+junit-pod-logger/allure-results/
 *.log
 .DS_Store
 demo-tests/src/test/resources/demo-api.tar
+.gitignore
