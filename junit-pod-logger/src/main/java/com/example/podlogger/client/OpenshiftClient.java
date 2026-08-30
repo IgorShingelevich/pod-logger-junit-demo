@@ -34,6 +34,7 @@ public class OpenshiftClient {
     }
 
     String fetchRawLog() {
+        log.debug("Fetching logs from namespace {} with selector {}", properties.getNamespace(), properties.getPodLabelSelector());
         String namespace = properties.getNamespace();
         String[] selector = splitSelector(properties.getPodLabelSelector());
         List<Pod> pods = fabric8.pods()
