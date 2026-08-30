@@ -4,6 +4,7 @@
 **Канонический путь:** `docs/PodLoggerJunitDemoPRD.md`.  
 **Операции и запуск:** [`README.md`](../README.md).  
 **Каталог тестов:** [`PodLoggerJunitDemoTest.md`](PodLoggerJunitDemoTest.md).  
+**Команды:** [`PodLoggerJunitDemoCommands.md`](PodLoggerJunitDemoCommands.md).  
 **Фичи:**  
 - [`Persistent Log Store`](story/PersistentLogStoreStory/PersistentLogStoreStory.md)  
 - [`OpenShift Event Handling`](story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md)

@@ -9,6 +9,7 @@ docs/
   README.md                          ← этот файл
   PodLoggerJunitDemoPRD.md         ← общий as-built PRD
   PodLoggerJunitDemoTest.md         ← каталог всех тестов
+  PodLoggerJunitDemoCommands.md    ← справочник команд (все скопы)
   story/
     PersistentLogStoreStory/PersistentLogStoreStory.md
     OpenShiftEventHandlingStory/
@@ -21,7 +22,8 @@ docs/
 | --- | --- |
 | [`README.md`](../README.md) (корень репозитория) | Как запускать, модули, аннотация, путь к SQLite, Jenkins, коды демо-API |
 | [`PodLoggerJunitDemoPRD.md`](PodLoggerJunitDemoPRD.md) | Общий PRD: назначение, модули, слои, общие инварианты |
-| [`PodLoggerJunitDemoTest.md`](PodLoggerJunitDemoTest.md) | Каталог тестов: приёмка, проверка, команды, известные ошибки |
+| [`PodLoggerJunitDemoTest.md`](PodLoggerJunitDemoTest.md) | Каталог тестов: приёмка, проверка, известные ошибки |
+| [`PodLoggerJunitDemoCommands.md`](PodLoggerJunitDemoCommands.md) | Справочник команд по скопам (Test Commands и другие) |
 | [`story/PersistentLogStoreStory/PersistentLogStoreStory.md`](story/PersistentLogStoreStory/PersistentLogStoreStory.md) | SQLite store: схема, API, retention, приёмка |
 | [`story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md`](story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md) | Events, health, Allure Events, fail-fast (as-built) |
 

@@ -15,7 +15,8 @@
 | Документ | Содержание |
 | --- | --- |
 | [`docs/PodLoggerJunitDemoPRD.md`](docs/PodLoggerJunitDemoPRD.md) | Общий PRD: назначение, модули, слои, инварианты |
-| [`docs/PodLoggerJunitDemoTest.md`](docs/PodLoggerJunitDemoTest.md) | Каталог тестов: приёмка, проверка, команды, известные ошибки |
+| [`docs/PodLoggerJunitDemoTest.md`](docs/PodLoggerJunitDemoTest.md) | Каталог тестов: приёмка, проверка, известные ошибки |
+| [`docs/PodLoggerJunitDemoCommands.md`](docs/PodLoggerJunitDemoCommands.md) | Справочник команд по скопам (Test Commands и другие) |
 | [`docs/story/PersistentLogStoreStory/PersistentLogStoreStory.md`](docs/story/PersistentLogStoreStory/PersistentLogStoreStory.md) | SQLite store |
 | [`docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md`](docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md) | Events, health, fail-fast |
 | [`docs/README.md`](docs/README.md) | Оглавление docs |

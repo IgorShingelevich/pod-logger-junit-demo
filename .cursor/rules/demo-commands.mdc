@@ -1,0 +1,54 @@
+---
+description: >-
+  Capture new shell/Maven/Docker/Allure/git/kubectl commands from this
+  conversation into docs/PodLoggerJunitDemoCommands.md by scope. Apply in every
+  chat of this repo whenever a command is run or recommended.
+alwaysApply: true
+---
+
+# Demo Commands capture
+
+Канон команд: `docs/PodLoggerJunitDemoCommands.md`. Каталог тестов (`docs/PodLoggerJunitDemoTest.md`) команды не хранит — только ссылку на скоп.
+
+## Когда срабатывает
+
+После любого из:
+
+- вызов Shell / терминала в этом диалоге;
+- команда, которую даёшь пользователю скопировать;
+- новая однострочная проверка (Maven, Docker, Allure, SQLite, git, `oc`/`kubectl`).
+
+Не ждать явной просьбы «запиши команду».
+
+## Куда класть
+
+Вставить в **существующий скоп**, не создавая дубль всего файла:
+
+| Признак | Скоп (`##` в Commands.md) |
+| --- | --- |
+| `java`, `mvn -version`, `JAVA_HOME`, PATH, Maven zip | Environment |
+| `docker version/info/ps/build` | Docker / CTL |
+| `mvn ... package -DskipTests` без теста | Build |
+| `mvn ... test`, `-Dtest=`, Surefire XML | **Test Commands** |
+| `allure:report`, `allure-maven`, `http.server` отчёта | Allure |
+| `*.sqlite`, `sqlite3` | Store |
+| `git status/diff/log` | Git |
+| `kubectl`, `oc`, CRC/OKD | Cluster |
+
+Нет подходящего скопа — добавить строку в таблицу «Скопы» и новый `##` с тем же именем.
+
+## Как писать
+
+- Добавлять только **новую** команду: сначала grep/Read Commands.md; точный дубль не копировать.
+- Писать рабочее тело в fenced `powershell` (Windows) или `bash`.
+- Одна мысль — один блок; рядом одна строка «зачем».
+- Секреты, токены, пароли — не писать.
+- Не переносить сюда критерии приёмки тестов.
+
+## Пример
+
+```markdown
+# ❌ BAD — команда только в ответе чата
+# ✅ GOOD — после `mvn -pl demo-tests -am test -Dtest=NewIT`
+#    дописать в ## Test Commands → По классам тот же `-Dtest=`
+```
