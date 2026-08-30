@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -14,12 +15,24 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import com.example.podlogger.PodLogger;
 
+import io.restassured.RestAssured;
+import io.restassured.filter.log.LogDetail;
+import io.restassured.filter.log.RequestLoggingFilter;
+import io.restassured.filter.log.ResponseLoggingFilter;
+
 @SpringBootTest(classes = DemoTestApplication.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @PodLogger(collectOnFailOnly = true)
 class OrderErrorIT {
 
     static {
         ClusterLifecycle.start();
+    }
+
+    @BeforeAll
+    static void configureRestAssuredLogging() {
+        RestAssured.replaceFiltersWith(
+                new RequestLoggingFilter(LogDetail.ALL, true),
+                new ResponseLoggingFilter(LogDetail.ALL, true));
     }
 
     @Autowired

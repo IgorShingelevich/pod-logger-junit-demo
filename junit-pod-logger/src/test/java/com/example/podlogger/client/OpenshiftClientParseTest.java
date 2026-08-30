@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import com.example.podlogger.PodLoggerProperties;
@@ -15,6 +16,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 class OpenshiftClientParseTest {
 
     @Test
+    @DisplayName("проверка парсинга JSON строк и пропуска шумов")
     void parsesJsonLinesAndSkipsNoise() throws Exception {
         ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
         OpenshiftClient client = new OpenshiftClient(null, new PodLoggerProperties(), mapper);
@@ -30,5 +32,5 @@ class OpenshiftClientParseTest {
         assertEquals("Unknown SKU", logs.get(0).getMessage());
         assertEquals(LocalDateTime.of(2026, 8, 29, 17, 1, 2, 123_000_000), logs.get(0).getTimestamp());
         assertTrue(logs.get(1).getMessage().contains("started"));
-    }
+    }   
 }
