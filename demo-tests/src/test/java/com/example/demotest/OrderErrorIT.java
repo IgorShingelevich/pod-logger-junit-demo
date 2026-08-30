@@ -31,8 +31,8 @@ class OrderErrorIT {
     @BeforeAll
     static void configureRestAssuredLogging() {
         RestAssured.replaceFiltersWith(
-                new RequestLoggingFilter(LogDetail.ALL, true),
-                new ResponseLoggingFilter(LogDetail.ALL, true));
+                new RequestLoggingFilter(LogDetail.ALL, System.out),
+                new ResponseLoggingFilter(LogDetail.ALL, System.out));
     }
 
     @Autowired

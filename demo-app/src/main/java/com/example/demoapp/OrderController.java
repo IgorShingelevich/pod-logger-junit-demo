@@ -26,7 +26,7 @@ public class OrderController {
     }
 
     @GetMapping("/api/orders/{code}")
-    public ResponseEntity<Map<String, String>> order(@PathVariable String code) {
+    public ResponseEntity<Map<String, String>> order(@PathVariable("code") String code) {
         String message = ERRORS.getOrDefault(code, "Unknown error code: " + code);
         log.error("{}", message);
         return ResponseEntity.badRequest().body(Map.of("code", code, "message", message));
