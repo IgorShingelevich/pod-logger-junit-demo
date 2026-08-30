@@ -9,7 +9,10 @@
 
 Это **не** полноценный OpenShift (CRC/OKD). Локальный кластер демо — **K3s в Docker (Testcontainers)**. API `pods/log` тот же.
 
-Спецификация store: [`docs/feature/PersistentLogStore/PersistentLogStorePRD.md`](docs/feature/PersistentLogStore/PersistentLogStorePRD.md).
+Спецификации:
+
+- [`docs/feature/PersistentLogStore/PersistentLogStorePRD.md`](docs/feature/PersistentLogStore/PersistentLogStorePRD.md) — persistent log store.
+- [`docs/EventHandling.PRD.md`](docs/EventHandling.PRD.md) — Event Handling, health checks, fail-fast, multi-Pod diagnostics, REST Assured correlation и стандартные Kubernetes/Fabric8 testing integrations.
 
 ## Требования
 
