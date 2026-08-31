@@ -7,6 +7,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.example.podlogger.allure.AllureSink;
 import com.example.podlogger.allure.DefaultAllureSink;
@@ -40,6 +42,8 @@ import javax.sql.DataSource;
         excludeFilters = @ComponentScan.Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class))
 public class PodLoggerConfiguration {
 
+    private static final Logger log = LoggerFactory.getLogger(PodLoggerConfiguration.class);
+
     /**
      * Jackson для парсера JSON-логов поды и Allure JSON-аттачей.
      * Даты пишутся ISO-строками, не epoch.
@@ -49,6 +53,7 @@ public class PodLoggerConfiguration {
     @Bean
     @ConditionalOnMissingBean(ObjectMapper.class)
     public ObjectMapper objectMapper() {
+        log.debug("Creating PodLogger ObjectMapper with JavaTimeModule and ISO date serialization");
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
@@ -70,6 +75,8 @@ public class PodLoggerConfiguration {
             OpenShiftClient fabric8,
             PodLoggerProperties properties,
             LogParser logParser) {
+        log.debug("Creating OpenshiftClient bean: namespace={} selector={} healthCheckUrl={}",
+                properties.getNamespace(), properties.getPodLabelSelector(), properties.getHealthCheckUrl());
         return new OpenshiftClient(fabric8, properties, logParser);
     }
 
@@ -81,6 +88,7 @@ public class PodLoggerConfiguration {
     @Bean
     @ConditionalOnMissingBean(AllureSink.class)
     public AllureSink allureSink() {
+        log.debug("Creating default AllureSink bean");
         return new DefaultAllureSink();
     }
 
@@ -93,8 +101,12 @@ public class PodLoggerConfiguration {
     @Bean
     @ConditionalOnMissingBean(DataSource.class)
     public DataSource podLoggerDataSource(PodLoggerProperties properties) {
-        DataSource dataSource = SqliteDataSourceFactory.create(StorePathResolver.resolve(properties));
+        java.nio.file.Path resolvedPath = StorePathResolver.resolve(properties);
+        log.debug("Creating pod logger DataSource for {}", resolvedPath.toAbsolutePath());
+        DataSource dataSource = SqliteDataSourceFactory.create(resolvedPath);
+        log.debug("Running SQLite schema migration for {}", resolvedPath.toAbsolutePath());
         SchemaMigrator.migrate(dataSource);
+        log.debug("SQLite DataSource ready for {}", resolvedPath.toAbsolutePath());
         return dataSource;
     }
 }

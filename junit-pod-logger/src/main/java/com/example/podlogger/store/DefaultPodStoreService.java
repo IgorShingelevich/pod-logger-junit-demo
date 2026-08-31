@@ -36,13 +36,16 @@ public class DefaultPodStoreService implements PodStoreService {
     @Override
     public void saveLogs(List<PodLogDto> logs) {
         if (logs == null || logs.isEmpty()) {
+            log.debug("saveLogs(logs) skipped: no log entries provided");
             return;
         }
         for (PodLogDto entry : logs) {
             if (entry.getTestRunId() == null) {
+                log.debug("Reject saveLogs(logs): missing testRunId on entry {}", entry);
                 throw new IllegalArgumentException("testRunId is required on each log entry");
             }
         }
+        log.debug("saveLogs(logs): persisting {} log entries with embedded testRunId", logs.size());
         logStoreRepository.saveAll(logs);
     }
 
@@ -52,11 +55,14 @@ public class DefaultPodStoreService implements PodStoreService {
     @Override
     public void saveLogs(UUID testRunId, List<PodLogDto> logs) {
         if (testRunId == null) {
+            log.debug("Reject saveLogs(testRunId, logs): testRunId is null");
             throw new IllegalArgumentException("testRunId is required");
         }
         if (logs == null || logs.isEmpty()) {
+            log.debug("saveLogs(testRunId, logs) skipped: testRunId={} no log entries provided", testRunId);
             return;
         }
+        log.debug("saveLogs(testRunId, logs): resolving run metadata for testRunId={} logCount={}", testRunId, logs.size());
         TestRunDto run = testRunRepository.findById(testRunId)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown testRunId " + testRunId));
         for (PodLogDto entry : logs) {
@@ -85,6 +91,7 @@ public class DefaultPodStoreService implements PodStoreService {
                 entry.setId(UUID.randomUUID());
             }
         }
+        log.debug("saveLogs(testRunId, logs): persisting {} enriched log entries for run {}", logs.size(), testRunId);
         logStoreRepository.saveAll(logs);
     }
 

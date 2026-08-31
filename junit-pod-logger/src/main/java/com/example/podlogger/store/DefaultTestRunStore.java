@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.example.podlogger.store.dto.TestRunDto;
@@ -19,6 +21,8 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class DefaultTestRunStore implements TestRunStore {
+
+    private static final Logger log = LoggerFactory.getLogger(DefaultTestRunStore.class);
 
     private final TestRunRepository testRunRepository;
 
@@ -45,15 +49,25 @@ public class DefaultTestRunStore implements TestRunStore {
     @Override
     public UUID startTestRun(TestRunDto draft) {
         if (draft.getTestRunName() == null || draft.getTestRunName().isBlank()) {
+            log.debug("Reject startTestRun: testRunName is blank");
             throw new IllegalArgumentException("testRunName is required");
         }
         if (draft.getEnvironmentType() == null) {
+            log.debug("Reject startTestRun: environmentType is null for {}", draft.getTestRunName());
             throw new IllegalArgumentException("environmentType is required");
         }
         if (draft.getStartedAt() == null) {
             draft.setStartedAt(LocalDateTime.now(ZoneOffset.UTC));
         }
         draft.setStatus("STARTED");
+        log.debug("startTestRun: name={} suite={} environment={} serviceType={} namespace={} selector={} startedAt={}",
+                draft.getTestRunName(),
+                draft.getTestSuiteName(),
+                draft.getEnvironmentType(),
+                draft.getServiceType(),
+                draft.getNamespace(),
+                draft.getPodLabelSelector(),
+                draft.getStartedAt());
         return testRunRepository.insert(draft);
     }
 
@@ -62,7 +76,9 @@ public class DefaultTestRunStore implements TestRunStore {
      */
     @Override
     public void finishTestRun(UUID testRunId) {
-        testRunRepository.finish(testRunId, LocalDateTime.now(ZoneOffset.UTC));
+        LocalDateTime finishedAt = LocalDateTime.now(ZoneOffset.UTC);
+        log.debug("finishTestRun: testRunId={} finishedAt={}", testRunId, finishedAt);
+        testRunRepository.finish(testRunId, finishedAt);
     }
 
     /**

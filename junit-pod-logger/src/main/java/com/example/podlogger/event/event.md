@@ -58,7 +58,7 @@ Kube-шум `Pulled` / `Created` / `Started` / `Scheduled` в allowlist **не**
 
 Если у вас меняется источник (`events.k8s.io`, кастомный адаптер, иная семантика `reason`, пустой `lastTimestamp`, другой формат времени), придётся адаптировать mapping и, возможно, rules matcher. Сам DTO менять нужно только если реально не хватает библиотечного минимума.
 
-## Возможные риски формата Events
+## Риски миграции
 
 | Риск | Что произойдёт сейчас | Что учитывать при переносе |
 | --- | --- | --- |
@@ -71,7 +71,7 @@ Kube-шум `Pulled` / `Created` / `Started` / `Scheduled` в allowlist **не**
 | Отсутствует permission `list` или `create` | библиотека логирует error/warn и работает best-effort | заранее проверить RBAC и degraded behavior |
 | Message слишком длинный или содержит много line breaks | debug пишет только сокращённый snippet | full raw payload смотреть в cluster tooling, не в app log |
 
-## Миграционный чек-лист
+### Миграционный чек-лист
 
 1. Проверить, какие именно Events даёт ваш кластер: core/v1, `events.k8s.io`, adapter поверх них или смесь.
 2. Снять реальные примеры platform Events для вашей поды: maintenance, restart, eviction, readiness, scheduling.
@@ -83,6 +83,12 @@ Kube-шум `Pulled` / `Created` / `Started` / `Scheduled` в allowlist **не**
 8. Если ваш кластер использует другие `reason` для stand-down, сначала пробуйте конфигурацию `standDownEventCodes` / `standDownMessagePatterns`, а не переписывание matcher.
 9. Если timestamp не парсится или API не core/v1, адаптировать `PodEventMapper`/client, а не `event.md`.
 10. После адаптации проверить два сценария: publish lifecycle Event и fail-path с list/filter/match.
+
+### Профит для агента в новом контуре
+
+- Этот раздел отделяет миграционные риски платформенных Events от рисков stdout-парсинга: если DTO логов уже исправлены, fail-fast всё равно может не сработать из-за других `reason`, RBAC или API surface.
+- `DEBUG` на `com.example.podlogger.client` и `com.example.podlogger.client.PodEventMapper` покажет шаги `Listing pod events`, `Mapped Event -> DTO`, `Availability probe received ... event DTO(s)`, поэтому агент быстро увидит, проблема в list/publish, mapping timestamp или allowlist stand-down.
+- Для банковского контура это экономит время: сначала можно адаптировать `standDownEventCodes` / `standDownMessagePatterns`, и только потом решать, нужен ли новый adapter поверх `events.k8s.io`.
 
 ## Границы
 

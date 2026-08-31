@@ -72,6 +72,13 @@ public class PodLoggerService {
      * @param annotation аннотация тестового класса
      */
     public void applyAnnotation(PodLogger annotation) {
+        log.debug("Applying @PodLogger annotation: namespace={} selector={} collectOnFailOnly={} environment={} publishLifecycleEvents={} failFastOnStandDownEvent={}",
+                annotation.namespace(),
+                annotation.podLabelSelector(),
+                annotation.collectOnFailOnly(),
+                annotation.environmentType(),
+                annotation.publishLifecycleEvents(),
+                annotation.failFastOnStandDownEvent());
         properties.setNamespace(annotation.namespace());
         properties.setPodLabelSelector(annotation.podLabelSelector());
         properties.setCollectOnFailOnly(annotation.collectOnFailOnly());
@@ -96,6 +103,15 @@ public class PodLoggerService {
         if (annotation.standDownMessagePatterns().length > 0) {
             properties.setStandDownMessagePatterns(List.of(annotation.standDownMessagePatterns()));
         }
+        log.debug("Effective PodLoggerProperties: namespace={} selector={} testRunName={} testSuiteName={} serviceType={} healthCheckUrl={} standDownCodes={} standDownPatterns={}",
+                properties.getNamespace(),
+                properties.getPodLabelSelector(),
+                properties.getTestRunName(),
+                properties.getTestSuiteName(),
+                properties.getServiceType(),
+                properties.getHealthCheckUrl(),
+                properties.getStandDownEventCodes(),
+                properties.getStandDownMessagePatterns());
     }
 
     /**
@@ -115,6 +131,8 @@ public class PodLoggerService {
             LocalDateTime start,
             LocalDateTime end,
             boolean failed) {
+        log.debug("handleAfterEach start: displayName={} testRunId={} failed={} start={} end={}",
+                context.getDisplayName(), testRunId, failed, start, end);
         if (!failed) {
             attachLogsIfNeeded(context, testRunId, start, end, false);
             return PodAvailability.up();
@@ -143,9 +161,12 @@ public class PodLoggerService {
         LocalDateTime from = start == null ? LocalDateTime.now(ZoneOffset.UTC).minusSeconds(SKEW_SECONDS)
                 : start.minusSeconds(SKEW_SECONDS);
         LocalDateTime to = end.plusSeconds(SKEW_SECONDS);
+        log.debug("handleFailedInvocation start: displayName={} testRunId={} window=[{} .. {}]",
+                context.getDisplayName(), testRunId, from, to);
 
         List<PodEventDto> events = List.of();
         try {
+            log.debug("handleFailedInvocation step=get-events displayName={}", context.getDisplayName());
             events = openshiftClient.getEvents(from, to);
         } catch (Exception e) {
             log.error("Failed to get pod events for {}", context.getDisplayName(), e);
@@ -153,9 +174,12 @@ public class PodLoggerService {
         if (events == null) {
             events = List.of();
         }
+        log.debug("handleFailedInvocation step=get-events-complete displayName={} eventCount={}",
+                context.getDisplayName(), events.size());
 
         PodAvailability availability = PodAvailability.up();
         try {
+            log.debug("handleFailedInvocation step=probe-availability displayName={}", context.getDisplayName());
             availability = openshiftClient.probePodAvailability();
         } catch (Exception e) {
             log.error("Failed to probe pod availability for {}", context.getDisplayName(), e);
@@ -163,32 +187,50 @@ public class PodLoggerService {
         if (availability == null) {
             availability = PodAvailability.up();
         }
+        log.debug("handleFailedInvocation step=probe-availability-complete displayName={} availability={}",
+                context.getDisplayName(), availability);
 
         if (!events.isEmpty()) {
+            log.debug("handleFailedInvocation step=attach-events displayName={} eventCount={}",
+                    context.getDisplayName(), events.size());
             attachmentService.attachEvents(
                     "pod-events-" + LogAllureAttachmentService.sanitize(context.getDisplayName()),
                     events);
         }
 
+        log.debug("handleFailedInvocation step=wait-for-log-flush displayName={}", context.getDisplayName());
         waitForLogFlush();
 
         List<PodLogDto> window = List.of();
         try {
+            log.debug("handleFailedInvocation step=collect-runtime-logs displayName={} window=[{} .. {}]",
+                    context.getDisplayName(), from, to);
             window = collectRuntimeLogs(from, to);
         } catch (Exception e) {
             log.error("Failed to collect runtime pod logs for {}", context.getDisplayName(), e);
         }
+        log.debug("handleFailedInvocation step=collect-runtime-logs-complete displayName={} logCount={}",
+                context.getDisplayName(), window.size());
+        log.debug("handleFailedInvocation step=enrich displayName={} logCount={}", context.getDisplayName(), window.size());
         enrich(window, context, testRunId, true);
+        log.debug("handleFailedInvocation step=apply-relevant-events displayName={} logCount={} eventCount={}",
+                context.getDisplayName(), window.size(), events.size());
         applyRelevantEvents(window, events);
 
         if (availability.isAvailable()) {
+            log.debug("handleFailedInvocation step=persist-logs displayName={} logCount={}",
+                    context.getDisplayName(), window.size());
             persistLogs(testRunId, window, context);
+            log.debug("handleFailedInvocation step=attach-logs displayName={} logCount={}",
+                    context.getDisplayName(), window.size());
             attachmentService.attachJson(
                     "pod-logs-" + LogAllureAttachmentService.sanitize(context.getDisplayName()),
                     window);
             log.info("Attached {} pod log events for {} (window {} .. {})",
                     window.size(), context.getDisplayName(), from, to);
         } else if (!window.isEmpty()) {
+            log.debug("handleFailedInvocation step=attach-logs-unavailable displayName={} logCount={} code={}",
+                    context.getDisplayName(), window.size(), availability.getCode());
             attachmentService.attachJson(
                     "pod-logs-" + LogAllureAttachmentService.sanitize(context.getDisplayName()),
                     window);
@@ -196,6 +238,7 @@ public class PodLoggerService {
                     window.size(), context.getDisplayName());
         }
 
+        log.debug("handleFailedInvocation complete: displayName={} availability={}", context.getDisplayName(), availability);
         return availability;
     }
 
@@ -215,6 +258,8 @@ public class PodLoggerService {
             LocalDateTime start,
             LocalDateTime end,
             boolean failed) {
+        log.debug("attachLogsIfNeeded start: displayName={} testRunId={} failed={} start={} end={}",
+                context.getDisplayName(), testRunId, failed, start, end);
         if (!CollectGate.shouldCollect(properties.isCollectOnFailOnly(), failed)) {
             log.debug("Skip Allure+SQLite for {} because collectOnFailOnly={} and failed={}",
                     context.getDisplayName(), properties.isCollectOnFailOnly(), failed);
@@ -225,18 +270,24 @@ public class PodLoggerService {
             return;
         }
 
+        log.debug("attachLogsIfNeeded step=wait-for-log-flush displayName={}", context.getDisplayName());
         waitForLogFlush();
 
         List<PodLogDto> window;
         try {
+            log.debug("attachLogsIfNeeded step=collect-runtime-logs displayName={} window=[{} .. {}]",
+                    context.getDisplayName(), start.minusSeconds(SKEW_SECONDS), end.plusSeconds(SKEW_SECONDS));
             window = collectRuntimeLogs(start.minusSeconds(SKEW_SECONDS), end.plusSeconds(SKEW_SECONDS));
         } catch (Exception e) {
             log.error("Failed to collect runtime pod logs for {}", context.getDisplayName(), e);
             return;
         }
 
+        log.debug("attachLogsIfNeeded step=enrich displayName={} logCount={}", context.getDisplayName(), window.size());
         enrich(window, context, testRunId, failed);
+        log.debug("attachLogsIfNeeded step=persist-logs displayName={} logCount={}", context.getDisplayName(), window.size());
         persistLogs(testRunId, window, context);
+        log.debug("attachLogsIfNeeded step=attach-logs displayName={} logCount={}", context.getDisplayName(), window.size());
         attachmentService.attachJson(
                 "pod-logs-" + LogAllureAttachmentService.sanitize(context.getDisplayName()),
                 window);
@@ -255,11 +306,13 @@ public class PodLoggerService {
      */
     public void publishTestRunStarted(UUID testRunId, String testRunName, String suiteName) {
         if (!properties.isPublishLifecycleEvents()) {
+            log.debug("publishTestRunStarted skipped: publishLifecycleEvents=false testRunId={}", testRunId);
             return;
         }
         String message = "testRunName=" + nullToEmpty(testRunName)
                 + " testRunId=" + testRunId
                 + " suite=" + nullToEmpty(suiteName);
+        log.debug("publishTestRunStarted: testRunId={} runName={} suite={}", testRunId, testRunName, suiteName);
         openshiftClient.publishPodEvent("Normal", PodEventReasons.TEST_RUN_STARTED, message);
     }
 
@@ -274,12 +327,15 @@ public class PodLoggerService {
      */
     public void publishTestRunFinished(String testRunName, int total, int passed, int failed) {
         if (!properties.isPublishLifecycleEvents()) {
+            log.debug("publishTestRunFinished skipped: publishLifecycleEvents=false runName={}", testRunName);
             return;
         }
         String message = "testRunName=" + nullToEmpty(testRunName)
                 + " total=" + total
                 + " passed=" + passed
                 + " failed=" + failed;
+        log.debug("publishTestRunFinished: runName={} total={} passed={} failed={}",
+                testRunName, total, passed, failed);
         openshiftClient.publishPodEvent("Normal", PodEventReasons.TEST_RUN_FINISHED, message);
     }
 
@@ -291,6 +347,7 @@ public class PodLoggerService {
      */
     public PodAvailability probeAvailability() {
         try {
+            log.debug("probeAvailability start");
             return openshiftClient.probePodAvailability();
         } catch (Exception e) {
             log.error("Failed to probe pod availability", e);
@@ -309,12 +366,17 @@ public class PodLoggerService {
     public MergedLogResult collectAndMergeLogsForTestRun(UUID testRunId) {
         MergedLogResult empty = MergedLogResult.builder().testRunId(testRunId).build();
         try {
+            log.debug("collectAndMergeLogsForTestRun start: testRunId={}", testRunId);
             TestRunDto run = testRunStore.getTestRun(testRunId)
                     .orElseThrow(() -> new IllegalStateException("Unknown testRunId " + testRunId));
             LocalDateTime from = run.getStartedAt().minusSeconds(SKEW_SECONDS);
             LocalDateTime to = LocalDateTime.now(ZoneOffset.UTC).plusSeconds(SKEW_SECONDS);
+            log.debug("collectAndMergeLogsForTestRun window: testRunId={} runName={} window=[{} .. {}]",
+                    testRunId, run.getTestRunName(), from, to);
             List<PodLogDto> fromPersistent = podStoreService.getLogs(testRunId);
             List<PodLogDto> fromRuntime = collectRuntimeLogs(from, to);
+            log.debug("collectAndMergeLogsForTestRun fetched: testRunId={} persistentCount={} runtimeCount={}",
+                    testRunId, fromPersistent.size(), fromRuntime.size());
             enrichRunContext(fromRuntime, run, null, null, null, null);
 
             Map<String, PodLogDto> merged = new LinkedHashMap<>();
@@ -330,15 +392,21 @@ public class PodLoggerService {
                 }
             }
             if (inserted > 0) {
+                log.debug("collectAndMergeLogsForTestRun step=save-runtime testRunId={} inserted={}", testRunId, inserted);
                 podStoreService.saveLogs(testRunId, fromRuntime);
             }
             List<PodLogDto> mergedList = merged.values().stream()
-                    .sorted(Comparator.comparing(PodLogDto::getTimestamp, Comparator.nullsLast(Comparator.naturalOrder())))
+                    .sorted((left, right) -> Comparator.<LocalDateTime>nullsLast(Comparator.naturalOrder())
+                            .compare(left.getTimestamp(), right.getTimestamp()))
                     .collect(Collectors.toList());
             if (properties.isAttachRunSummaryToAllure()) {
+                log.debug("collectAndMergeLogsForTestRun step=attach-run-summary testRunId={} mergedCount={}",
+                        testRunId, mergedList.size());
                 attachmentService.attachJson("pod-logs-run-" + LogAllureAttachmentService.sanitize(run.getTestRunName()),
                         mergedList);
             }
+            log.debug("collectAndMergeLogsForTestRun complete: testRunId={} mergedCount={} insertedNewCount={}",
+                    testRunId, mergedList.size(), inserted);
             return MergedLogResult.builder()
                     .testRunId(testRunId)
                     .fromPersistent(fromPersistent)
@@ -361,10 +429,13 @@ public class PodLoggerService {
      * @return срез окна, возможно пустой
      */
     public List<PodLogDto> collectRuntimeLogs(LocalDateTime from, LocalDateTime to) {
-        return openshiftClient.getLog().stream()
+        log.debug("collectRuntimeLogs: window=[{} .. {}]", from, to);
+        List<PodLogDto> collected = openshiftClient.getLog().stream()
                 .filter(entry -> entry.getTimestamp() != null)
                 .filter(entry -> !entry.getTimestamp().isBefore(from) && !entry.getTimestamp().isAfter(to))
                 .collect(Collectors.toList());
+        log.debug("collectRuntimeLogs complete: window=[{} .. {}] matched={}", from, to, collected.size());
+        return collected;
     }
 
     /**
@@ -404,7 +475,10 @@ public class PodLoggerService {
             return properties.getServiceType();
         }
         String selector = properties.getPodLabelSelector();
-        int eq = selector == null ? -1 : selector.indexOf('=');
+        if (selector == null) {
+            return null;
+        }
+        int eq = selector.indexOf('=');
         return eq > 0 ? selector.substring(eq + 1) : selector;
     }
 
@@ -418,7 +492,11 @@ public class PodLoggerService {
     private void persistLogs(UUID testRunId, List<PodLogDto> window, ExtensionContext context) {
         try {
             if (testRunId != null) {
+                log.debug("persistLogs: displayName={} testRunId={} logCount={}",
+                        context.getDisplayName(), testRunId, window == null ? 0 : window.size());
                 podStoreService.saveLogs(testRunId, window);
+            } else {
+                log.debug("persistLogs skipped: displayName={} testRunId is null", context.getDisplayName());
             }
         } catch (Exception e) {
             log.error("Failed to persist pod logs for {}", context.getDisplayName(), e);
@@ -466,6 +544,8 @@ public class PodLoggerService {
         String testMethod = context.getTestMethod().map(method -> method.getName()).orElse(null);
         String displayName = context.getDisplayName();
         TestRunDto run = testRunId == null ? null : testRunStore.getTestRun(testRunId).orElse(null);
+        log.debug("enrich: displayName={} testRunId={} logCount={} testClass={} testMethod={} failed={} runFound={}",
+                displayName, testRunId, logs == null ? 0 : logs.size(), testClass, testMethod, failed, run != null);
         enrichRunContext(logs, run, testClass, testMethod, displayName, failed);
     }
 
@@ -487,6 +567,16 @@ public class PodLoggerService {
             String testMethod,
             String displayName,
             Boolean failed) {
+        log.debug("enrichRunContext: logCount={} runName={} testClass={} testMethod={} displayName={} failed={}",
+                logs == null ? 0 : logs.size(),
+                run == null ? null : run.getTestRunName(),
+                testClass,
+                testMethod,
+                displayName,
+                failed);
+        if (logs == null || logs.isEmpty()) {
+            return;
+        }
         for (PodLogDto entry : logs) {
             if (run != null) {
                 entry.setTestRunId(run.getId());

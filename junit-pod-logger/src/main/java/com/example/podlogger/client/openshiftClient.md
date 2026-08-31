@@ -50,6 +50,27 @@ Fabric8 **6.13.4**: только `client.v1().events()`, не `client.events()` 
 
 HTTP health — JDK `HttpClient` внутри client. Matcher stand-down — [`event.md`](../event/event.md), не этот пакет.
 
+## Риски миграции
+
+| Риск | Симптом | Где смотреть | Решение |
+| --- | --- | --- | --- |
+| Другой selector / namespace / несколько pod-кандидатов | `resolveTargetPod()` не находит pod или берёт не ту | `OpenshiftClient.resolveTargetPod`, `k8s.md` | сверить label selector, namespace и стратегию выбора pod |
+| Похожий клиент, но другой API surface / RBAC | `getEvents` пустой, publish/list падают warn/error, fail-fast не срабатывает | `OpenshiftClient`, `event.md`, `k8s.md` | проверить `pods`, `pods/log`, `events` права и используемый API (`client.v1().events()`) |
+| HTTP health в контуре банка отличается | `available=false` без stand-down или false-negative на probe | `probePodAvailability`, `healthCheckUrl` | адаптировать URL, ожидания тела ответа и short-circuit probe |
+| Parser не понимает stdout целевого сервиса | `getLog()` формально работает, но возвращает пустой/ломаный набор DTO | `parser/logParser.md` | сначала чинить DTO/mapping, не fabric8 wrapper |
+
+### Миграционный чек-лист
+
+1. Включить `DEBUG` для `com.example.podlogger.client` и `com.example.podlogger.client.PodEventMapper`.
+2. Проверить логи `Resolving target pod`, `Listing pod events`, `Availability probe`, `Sending HTTP health request`.
+3. До правок parser убедиться, что `resolveTargetPod()` и `fetchRawLog()` действительно читают нужную pod.
+4. Отдельно сверить RBAC и реальный формат platform Events.
+
+### Профит для агента в новом контуре
+
+- Этот раздел отделяет проблемы cluster access от проблем DTO/log parsing.
+- По debug-сообщениям `OpenshiftClient` агент быстро увидит, поломка в selector, правах, probe или в downstream parser.
+
 ## Приёмка этого пакета
 
 | Тест | Что закрывает |

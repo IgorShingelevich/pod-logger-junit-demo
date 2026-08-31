@@ -37,6 +37,7 @@ public final class SqliteDataSourceFactory {
         try {
             Path parent = storePath.toAbsolutePath().getParent();
             if (parent != null) {
+                log.debug("Ensuring SQLite parent directory exists: {}", parent);
                 Files.createDirectories(parent);
             }
         } catch (Exception e) {
@@ -45,7 +46,9 @@ public final class SqliteDataSourceFactory {
         SQLiteDataSource dataSource = new SQLiteDataSource();
         dataSource.setUrl("jdbc:sqlite:" + storePath.toAbsolutePath());
         dataSource.setBusyTimeout(5000);
+        log.debug("Opening SQLite DataSource at {}", storePath.toAbsolutePath());
         try (Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement()) {
+            log.debug("Applying SQLite PRAGMA journal_mode=WAL and busy_timeout=5000 for {}", storePath.toAbsolutePath());
             statement.execute("PRAGMA journal_mode=WAL");
             statement.execute("PRAGMA busy_timeout=5000");
         } catch (SQLException e) {

@@ -26,6 +26,25 @@ SUT: [`../demo-app/demo-app.md`](../demo-app/demo-app.md). Кластер YAML: 
 
 Docker Desktop named pipe на Windows достаточен. `kubectl`/`oc` из тестов не вызываются.
 
+## Риски миграции
+
+| Риск | Симптом | Где смотреть | Решение |
+| --- | --- | --- | --- |
+| Bootstrap локального стенда не повторяет банковский контур | `ClusterLifecycle.start()` падает раньше `@PodLogger` или даёт другой runtime path | `ClusterLifecycle`, `ClusterConfig`, `k8s.md` | отделять demo bootstrap от library migration; в банковском контуре обычно адаптируется только consumer wiring |
+| RestAssured и HTTP-path работают, а pod log collection нет | бизнес-ответы корректны, но `pod-logs-*` пустые | `OrderErrorIT`, `parser/logParser.md`, `client/openshiftClient.md` | проверять не только HTTP, но и stdout + selector/namespace |
+| Maven `BUILD FAILURE` принимается за дефект инфраструктуры | ожидаемый 400+`fail()` путается с реальным падением bootstrap | `OrderErrorIT`, `InfrastructureLoggingTest`, `PodLoggerJunitDemoTest.md` | сначала отделить designed fail от настоящего setup failure |
+
+### Миграционный чек-лист
+
+1. Включить `DEBUG` для `com.example.demotest` и `com.example.podlogger`.
+2. Смотреть шаги `ClusterLifecycle.start step=...`, затем `PodLogger beforeAll/afterEach`.
+3. Если HTTP 400 проходит, а логи не собираются, переходить в `parser/logParser.md` и `openshiftClient.md`.
+
+### Профит для агента в новом контуре
+
+- Этот раздел помогает отделить демонстрационную инфраструктуру от переносимой библиотеки.
+- Агент быстрее понимает, где адаптировать только consumer wiring, а где действительно менять библиотеку.
+
 ## Почему `OrderErrorIT` красный
 
 `collectOnFailOnly = true` → без `Assertions.fail(...)` после HTTP 400 не будет Allure/SQLite. Maven `BUILD FAILURE` — ожидаемый исход модуля, не дефект.

@@ -26,6 +26,25 @@
 
 SQL, PRAGMA, путь к файлу и DDL в этот пакет не входят. Kubernetes, Allure, parse — тоже. `relevantEvents` repository не читает и не пишет.
 
+## Риски миграции
+
+| Риск | Симптом | Где смотреть | Решение |
+| --- | --- | --- | --- |
+| Попытка решить миграцию DTO на уровне repository | интерфейсы остаются теми же, но данные в строках уже неконсистентны | `store.md`, `parser/logParser.md` | править mapping выше по стеку, не порты persist |
+| Смена SQLite на другую СУБД | текущие интерфейсы остаются, но нужна новая impl | `sqlLite.md`, реализации repository | сохранять контракт интерфейсов и писать новый adapter |
+| Ожидание хранения `relevantEvents` в БД | в чтении из repository это поле всегда `null` | `store.md`, `allure.md` | помнить, что Events остаются runtime/Allure concern, не repository concern |
+
+### Миграционный чек-лист
+
+1. Если миграция касается формата логов, не начинать с repository.
+2. Если меняется СУБД, оставить `LogStoreRepository` / `TestRunRepository` как стабильный контракт.
+3. После замены impl прогнать `PersistentLogStoreTest`.
+
+### Профит для агента в новом контуре
+
+- Этот файл помогает не тратить время на ложный слой: большинство миграционных проблем живут выше repository.
+- Если нужен новый persistent backend, агент видит, что можно менять реализацию без переписывания всего модуля.
+
 ## Приёмка
 
 Отдельного теста на интерфейсы нет: их закрывает `PersistentLogStoreTest` через `DefaultPodStoreService` / `DefaultTestRunStore`. Карточка: [`PodLoggerJunitDemoTest.md`](../../../../../../../../../docs/PodLoggerJunitDemoTest.md) §3.

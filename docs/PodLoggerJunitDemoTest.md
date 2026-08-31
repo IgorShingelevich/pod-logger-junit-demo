@@ -377,3 +377,17 @@ Unit-тестов нет. Приёмка артефакта:
 - Команды: [`PodLoggerJunitDemoCommands.md`](PodLoggerJunitDemoCommands.md)
 - Приёмка Events (сценарии 1–5): `OpenshiftEventHandlingTest`
 - Приёмка store: `PersistentLogStoreTest`
+
+## Риски миграции
+
+| Риск | Симптом | Первый тест для проверки | Где искать решение |
+| --- | --- | --- | --- |
+| Новый stdout-формат логов не совпадает с `PodLogDto` | `OrderErrorIT` падает as designed, но `pod-logs-*` пустой или логи в SQLite не те | `OpenshiftClientParseTest` | `parser/logParser.md`, `demo-app/demo-app.md` |
+| Platform Events/RBAC/stand-down отличаются от демо | fail-fast не срабатывает или срабатывает неожиданно | `OpenshiftEventHandlingTest` | `event/event.md`, `client/openshiftClient.md`, `k8s/k8s.md` |
+| Store/SQLite ведут себя странно после адаптации parser | дедуп, query или persist дают неожиданный результат | `PersistentLogStoreTest` | `store/store.md`, `store/sqlite/sqlLite.md` |
+| Проблема только в consumer wiring и bootstrap | library unit tests зелёные, а интеграционный demo path падает | `InfrastructureLoggingTest`, затем `OrderErrorIT` | `demo-tests/demo-test.md`, `README.md` |
+
+### Профит для агента в новом контуре
+
+- Этот раздел связывает тип симптома с первым тестом, который должен доказать или опровергнуть гипотезу.
+- Агент может не читать весь каталог, а сразу запускать нужный тест и переходить в соответствующий MD-файл с рисками миграции.

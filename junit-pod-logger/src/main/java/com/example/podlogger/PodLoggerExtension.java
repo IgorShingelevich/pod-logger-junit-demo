@@ -136,9 +136,12 @@ public class PodLoggerExtension implements BeforeAllCallback, AfterAllCallback,
     public void afterAll(ExtensionContext context) {
         UUID testRunId = context.getStore(STORE_NS).get(TEST_RUN_ID_KEY, UUID.class);
         if (testRunId == null) {
+            log.warn("PodLogger afterAll: skip because testRunId is missing for {}", context.getDisplayName());
             return;
         }
+        log.debug("PodLogger afterAll: start testRunId={} displayName={}", testRunId, context.getDisplayName());
         try {
+            log.debug("PodLogger afterAll step=collect-merge testRunId={}", testRunId);
             service(context).collectAndMergeLogsForTestRun(testRunId);
         } catch (Exception e) {
             log.error("PodLogger afterAll collect/merge failed for {}", testRunId, e);
@@ -149,11 +152,14 @@ public class PodLoggerExtension implements BeforeAllCallback, AfterAllCallback,
             int disabled = count(context, DISABLED_COUNT_KEY);
             int total = passed + failed + disabled;
             String runName = context.getStore(STORE_NS).get(TEST_RUN_NAME_KEY, String.class);
+            log.debug("PodLogger afterAll step=publish-finished testRunId={} runName={} total={} passed={} failed={} disabled={}",
+                    testRunId, runName, total, passed, failed, disabled);
             service(context).publishTestRunFinished(runName, total, passed, failed);
         } catch (Exception e) {
             log.error("PodLogger afterAll publish TestRunFinished failed for {}", testRunId, e);
         }
         try {
+            log.debug("PodLogger afterAll step=finish-run testRunId={}", testRunId);
             testRunStore(context).finishTestRun(testRunId);
         } catch (Exception e) {
             log.error("PodLogger afterAll finishTestRun failed for {}", testRunId, e);
@@ -169,11 +175,16 @@ public class PodLoggerExtension implements BeforeAllCallback, AfterAllCallback,
     @Override
     public void beforeEach(ExtensionContext context) {
         Boolean standDown = classStore(context).get(STAND_UNAVAILABLE_KEY, Boolean.class);
+        log.debug("PodLogger beforeEach: displayName={} standDown={}", context.getDisplayName(), standDown);
         if (Boolean.TRUE.equals(standDown)) {
             String code = classStore(context).get(STAND_UNAVAILABLE_CODE_KEY, String.class);
+            log.debug("PodLogger beforeEach: abort displayName={} code={}", context.getDisplayName(), code);
             throw new IllegalStateException("Stand unavailable: " + code);
         }
-        context.getStore(STORE_NS).put(START_KEY, LocalDateTime.now(ZoneOffset.UTC));
+        LocalDateTime start = LocalDateTime.now(ZoneOffset.UTC);
+        context.getStore(STORE_NS).put(START_KEY, start);
+        log.debug("PodLogger beforeEach: stored {}={} for {}", START_KEY, start, context.getDisplayName());
+        log.debug("PodLogger beforeEach: re-applying @PodLogger annotation for {}", context.getDisplayName());
         service(context).applyAnnotation(annotation(context));
     }
 
@@ -190,11 +201,15 @@ public class PodLoggerExtension implements BeforeAllCallback, AfterAllCallback,
         LocalDateTime end = LocalDateTime.now(ZoneOffset.UTC);
         boolean failed = context.getExecutionException().isPresent();
         UUID testRunId = classStore(context).get(TEST_RUN_ID_KEY, UUID.class);
+        log.debug("PodLogger afterEach: displayName={} testRunId={} failed={} window=[{} .. {}]",
+                context.getDisplayName(), testRunId, failed, start, end);
         PodAvailability availability = service(context).handleAfterEach(context, testRunId, start, end, failed);
+        log.debug("PodLogger afterEach: availability for {} -> {}", context.getDisplayName(), availability);
         if (failed && availability != null && availability.isStandDownEventPresent()
                 && annotation(context).failFastOnStandDownEvent()) {
             classStore(context).put(STAND_UNAVAILABLE_KEY, Boolean.TRUE);
             classStore(context).put(STAND_UNAVAILABLE_CODE_KEY, availability.getCode());
+            log.debug("PodLogger afterEach: stand-down latched for next tests code={}", availability.getCode());
         }
     }
 

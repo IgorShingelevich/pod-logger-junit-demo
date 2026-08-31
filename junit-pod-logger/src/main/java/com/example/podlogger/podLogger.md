@@ -63,6 +63,27 @@ Matcher и коды: [`event.md`](event/event.md). Контракт fail-fast �
 
 `PodLoggerConfiguration` ждёт fabric8 `OpenShiftClient` от потребителя. SQLite `DataSource` создаётся только при `@ConditionalOnMissingBean(DataSource)`. `spring-boot-autoconfigure` в POM **optional**.
 
+## Риски миграции
+
+| Риск | Симптом | Где смотреть | Решение |
+| --- | --- | --- | --- |
+| `beforeAll` падает до первого теста | класс не стартует, в логе `PodLogger beforeAll FAIL-FAST at step '...'` | `PodLoggerExtension`, `PodLoggerService`, `DefaultTestRunStore`, `PodLoggerConfiguration` | смотреть шаг `resolve-metadata` / `start-test-run` / `publish-started` / `probe-availability` и чинить конкретную зависимость |
+| В новом контуре OpenShift client похож, но DTO логов другие | `afterEach` проходит, но runtime window пустой или DTO частично `null` | `parser/logParser.md`, `client/openshiftClient.md` | сначала чинить parser/DTO alias и timestamp mapping, а не lifecycle hooks |
+| Stand-down или health работают не так, как в демо | тесты abort'ятся слишком рано или вообще не abort'ятся | `event/event.md`, `client/openshiftClient.md` | сверить allowlist кодов, RBAC и health URL |
+| `afterAll` не дозаписывает run summary | нет merge / нет `TestRunFinished` / run остаётся незавершённым | `PodLoggerExtension.afterAll`, `PodLoggerService.collectAndMergeLogsForTestRun` | смотреть debug шаги `collect-merge`, `publish-finished`, `finish-run` |
+
+### Миграционный чек-лист
+
+1. Включить `DEBUG` для `com.example.podlogger`.
+2. Прогнать один класс с `@PodLogger` и посмотреть шаги `beforeAll`, `beforeEach`, `afterEach`, `afterAll`.
+3. Если fail-fast срабатывает до теста, сначала разбирать `step` из лога, а не downstream эффекты в Allure/SQLite.
+4. Если fail-fast не срабатывает, но логи пустые, перейти в `parser/logParser.md`; если логи есть, но stand-down не ловится, перейти в `event/event.md`.
+
+### Профит для агента в новом контуре
+
+- Этот файл собирает слабые места orchestration в одном месте: hooks, store lifecycle, probe и merge.
+- По step-level логам `PodLogger beforeEach`, `PodLogger afterEach`, `PodLogger afterAll` агент быстро определяет, это ошибка рантайма, парсинга, store или кластерной доступности.
+
 ## Приёмка этого пакета
 
 Не отдельный тест-класс: поведение хуков закрывают `PersistentLogStoreTest` и `OpenshiftEventHandlingTest` (сценарии 1–5) в [`PodLoggerJunitDemoTest.md`](../../../../../../../docs/PodLoggerJunitDemoTest.md). Кластер не нужен.

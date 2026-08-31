@@ -126,6 +126,16 @@ mvn -pl demo-tests test
 
 `mvn -pl demo-tests test` без `-am` использует уже установленный `junit-pod-logger` и не перезапускает library Surefire.
 
+### DEBUG-прогон для миграции
+
+Использовать, когда нужно быстро локализовать падение в `beforeAll`, `beforeEach`, `afterEach`, `afterAll`, cluster bootstrap или parser/client/store path.
+
+```powershell
+mvn -pl demo-tests -am test "-Dtest=OrderErrorIT" "-Dsurefire.failIfNoSpecifiedTests=false" "-Dlogging.level.com.example.podlogger=DEBUG" "-Dlogging.level.com.example.demotest=DEBUG"
+```
+
+Зачем: включает step-level SLF4J debug для `PodLoggerExtension`, `PodLoggerService`, `ClusterLifecycle`, parser, client, store и Allure wiring.
+
 ### Чистый прогон (удалить артефакты прошлых запусков)
 
 Перед приёмкой, разбором Allure/SQLite или когда нужна одна «свежая» картина — очистить каталоги отчётов и store demo-tests. Иначе `allure-results` и Surefire XML смешиваются с прошлыми прогонами.
@@ -288,3 +298,18 @@ fc.exe /b k8s\demo-api.yaml demo-tests\src\test\resources\k8s\demo-api.yaml
 ```powershell
 # сюда: oc login, oc get pods, kubectl get events
 ```
+
+---
+
+## Риски миграции
+
+| Риск | Симптом | Команда |
+| --- | --- | --- |
+| Агент запускает тесты без расширенного debug и теряет шаг падения | в логе есть только итоговая ошибка без понятного контекста | `DEBUG-прогон для миграции` выше |
+| Выполняется не чистый прогон и артефакты смешиваются | Allure / Surefire / SQLite содержат следы старых запусков | `Чистый прогон` в разделе `Test Commands` |
+| Проверяется не тот слой | гоняется полный demo path, хотя сначала нужен parser или store unit test | `По классам` в разделе `Test Commands` |
+
+### Профит для агента в новом контуре
+
+- Этот файл даёт готовые команды для пошаговой локализации проблемы без подбора аргументов Maven вручную.
+- Для миграции особенно полезна связка: сначала `Чистый прогон`, затем `DEBUG-прогон для миграции`, затем точечные library-тесты.

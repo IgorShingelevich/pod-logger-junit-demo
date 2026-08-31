@@ -64,3 +64,22 @@
 Lombok и SLF4J — compile/runtime helpers, не часть публичного контракта.
 
 Окно invocation: ±2s (`PodLoggerService.SKEW_SECONDS`). Events на passed не читаются. Пустой Events-аттач запрещён. Один `collectOnFailOnly` на оба выхода логов.
+
+## Риски миграции
+
+| Риск | Симптом | Где смотреть | Решение |
+| --- | --- | --- | --- |
+| Главный контракт миграции сломан на границе stdout → DTO | библиотека разворачивается, но логи не доходят до Allure/SQLite | `src/main/java/com/example/podlogger/parser/logParser.md` | начинать с parser и `PodLogDto`, а не с SQLite |
+| OpenShift/Fabric8 часть похожа, но platform Events и probe отличаются | fail-fast и lifecycle Events ведут себя иначе | `src/main/java/com/example/podlogger/client/openshiftClient.md`, `src/main/java/com/example/podlogger/event/event.md` | адаптировать selector, RBAC, stand-down allowlist и probe |
+| Ожидание, что SQLite сама решит различия нового сервиса | схема поднимается, но сохранённые данные не соответствуют ожиданиям | `src/main/java/com/example/podlogger/store/store.md`, `src/main/java/com/example/podlogger/store/sqlite/sqlLite.md` | считать SQLite опосредованной частью и сначала стабилизировать входной mapping |
+
+### Миграционный чек-лист
+
+1. Включить `DEBUG` для `com.example.podlogger`, `com.example.podlogger.client`, `com.example.podlogger.parser`, `com.example.podlogger.store`.
+2. Сначала прогнать `OpenshiftClientParseTest`, затем `OpenshiftEventHandlingTest`, затем `PersistentLogStoreTest`.
+3. После library-тестов уже проверять consumer wiring и реальный кластер.
+
+### Профит для агента в новом контуре
+
+- Этот файл даёт краткую карту приоритетов: parser/DTO — первый кандидат на правку, client/events — второй, store/SQLite — зависимый слой.
+- Агент может быстро перейти в нужный частный MD вместо чтения всего модуля и исторических story-документов.

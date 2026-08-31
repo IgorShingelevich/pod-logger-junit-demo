@@ -50,7 +50,7 @@
 
 Если на новом проекте меняются **имена** ключей, **типы** (`epoch millis` вместо ISO) или структура JSON, придётся адаптировать либо сам DTO (`@JsonAlias`, `@JsonProperty`), либо mapping в parse-слое. Kubernetes здесь ничего не гарантирует.
 
-## Возможные риски парсинга
+## Риски миграции
 
 | Риск | Что произойдёт сейчас | Что учитывать при переносе |
 | --- | --- | --- |
@@ -67,7 +67,7 @@
 
 `demo-app` сейчас пишет JSON только с `timestamp`, `level`, `logger`, `message`; JSON-поля `stackTrace` там нет. Поэтому проверка continuation особенно важна именно для переноса на другой сервис.
 
-## Миграционный чек-лист
+### Миграционный чек-лист
 
 1. Снять реальный сырой dump `pods/log` целевой поды до любых правок библиотеки.
 2. Проверить, действительно ли лог идёт как JSON-per-line, а не pretty-printed JSON и не plain text.
@@ -79,6 +79,12 @@
 8. Если лишние ключи просто игнорируются, DTO не расширять. Если missing-критичны или имена другие, добавить alias/mapper.
 9. Если сервис пишет pretty JSON или нестандартный multiline-формат, не лечить это только DTO: нужен другой state-machine в parse.
 10. После адаптации проверить downstream: `fingerprint`, Allure JSON и SQLite не ломаются на `null` и на новом `stackTrace`.
+
+### Профит для агента в новом контуре
+
+- Это главный fail-fast раздел для вашего сценария: OpenShift client может остаться почти тем же, а входной JSON лога и поля `PodLogDto` поменяются.
+- `DEBUG` на `com.example.podlogger.parser` и `com.example.podlogger.client` покажет строки `Starting pod log parse`, `Line ... parsed into DTO`, `Line ... skipped before first DTO`, `Delegating raw dump to LogParser...`, поэтому агент быстро локализует, проблема в alias полей, формате `timestamp` или в multiline JSON.
+- SQLite здесь вторична: если parser возвращает пустые или частично `null` DTO, downstream начнёт проявлять косвенные симптомы в Allure, fingerprint и store без отдельной ошибки схемы.
 
 ## Приёмка этого пакета
 

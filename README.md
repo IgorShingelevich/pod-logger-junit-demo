@@ -211,3 +211,10 @@ rules:
 | `OUT_OF_STOCK` | Item is out of stock |
 | `PAYMENT_DECLINED` | Payment was declined |
 | `USER_BLOCKED` | User is blocked |
+
+## Риски миграции
+
+- Главный риск при переносе в другой контур находится не в OpenShift client как таковом, а в границе `pods/log` -> `PodLogDto`: другой JSON stdout, другие имена полей или другой `timestamp` быстро приводят к пустым или частично `null` DTO. Детали: [`junit-pod-logger/src/main/java/com/example/podlogger/parser/logParser.md`](junit-pod-logger/src/main/java/com/example/podlogger/parser/logParser.md).
+- Второй слой риска — platform Events, RBAC и probe. Если parser уже адаптирован, fail-fast всё ещё может вести себя иначе из-за `reason`, `message`, `events.k8s.io` или прав на `events`. Детали: [`junit-pod-logger/src/main/java/com/example/podlogger/client/openshiftClient.md`](junit-pod-logger/src/main/java/com/example/podlogger/client/openshiftClient.md), [`junit-pod-logger/src/main/java/com/example/podlogger/event/event.md`](junit-pod-logger/src/main/java/com/example/podlogger/event/event.md), [`k8s/k8s.md`](k8s/k8s.md).
+- SQLite в вашем сценарии обычно не первичный риск: библиотека хранит только свои опубликованные поля. Риск опосредован тем, какие поля пришли из parser/client и что попало в `PodLogDto`. Детали: [`junit-pod-logger/src/main/java/com/example/podlogger/store/store.md`](junit-pod-logger/src/main/java/com/example/podlogger/store/store.md), [`junit-pod-logger/src/main/java/com/example/podlogger/store/sqlite/sqlLite.md`](junit-pod-logger/src/main/java/com/example/podlogger/store/sqlite/sqlLite.md).
+- Для быстрой адаптации включайте `DEBUG` на `com.example.podlogger` и `com.example.demotest`, затем идите по step-level логам `PodLogger beforeAll/afterEach/afterAll` и `ClusterLifecycle.start step=...`. Команда есть в [`docs/PodLoggerJunitDemoCommands.md`](docs/PodLoggerJunitDemoCommands.md).

@@ -35,6 +35,8 @@ public class LogAllureAttachmentService {
     public void attachJson(String attachmentName, List<PodLogDto> logs) {
         try {
             String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(logs);
+            log.debug("Attaching pod logs to Allure: attachmentName={} logCount={} jsonLength={}",
+                    attachmentName, logs == null ? 0 : logs.size(), json.length());
             allureSink.addAttachment(attachmentName, "application/json", json, ".json");
         } catch (Exception e) {
             log.error("Failed to attach pod logs to Allure as {}", attachmentName, e);
@@ -50,10 +52,13 @@ public class LogAllureAttachmentService {
      */
     public void attachEvents(String attachmentName, List<PodEventDto> events) {
         if (events == null || events.isEmpty()) {
+            log.debug("Skip Allure events attachment: attachmentName={} because event list is empty", attachmentName);
             return;
         }
         try {
             String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(events);
+            log.debug("Attaching pod events to Allure: attachmentName={} eventCount={} jsonLength={}",
+                    attachmentName, events.size(), json.length());
             allureSink.addAttachment(attachmentName, "application/json", json, ".json");
         } catch (Exception e) {
             log.error("Failed to attach pod events to Allure as {}", attachmentName, e);

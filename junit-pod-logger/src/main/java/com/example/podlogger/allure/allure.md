@@ -32,6 +32,25 @@
 
 `attachJson` может сериализовать `PodLogDto.relevantEvents` как есть (то же окно, что Events-аттач). Passed-тест Events-аттач не получает — это решает service, не Allure-пакет.
 
+## Риски миграции
+
+| Риск | Симптом | Где смотреть | Решение |
+| --- | --- | --- | --- |
+| DTO после миграции содержат новые или неожиданные типы | attach падает на сериализации, но тест остаётся в прежнем статусе | `LogAllureAttachmentService`, `parser/logParser.md` | смотреть debug/error around `attachJson` / `attachEvents`, затем исправлять DTO mapping |
+| Пустой список Events трактуется как «что-то сломалось» | `pod-events-*` нет, хотя `pod-logs-*` есть | `PodLoggerService`, `event.md` | помнить, что empty Events = no-op по контракту |
+| Ожидание, что Allure покажет первичную причину падения | аттача нет или он пустой, а исходная причина выше по стеку | `podLogger.md`, `store.md` | разбирать orchestration logs до анализа вложений |
+
+### Миграционный чек-лист
+
+1. Включить `DEBUG` для `com.example.podlogger.allure` и `com.example.podlogger`.
+2. Проверить логи `Attaching pod logs to Allure`, `Attaching pod events to Allure`, `Skip Allure events attachment`.
+3. Если логов в Allure нет, сначала проверить parser/client/store, а не только этот пакет.
+
+### Профит для агента в новом контуре
+
+- Этот раздел объясняет, почему отсутствие аттача не всегда означает отсутствие логов на pod.
+- Агент быстрее отделяет проблему сериализации/attach от проблемы сбора данных.
+
 ## Приёмка этого пакета
 
 `OpenshiftEventHandlingTest`:

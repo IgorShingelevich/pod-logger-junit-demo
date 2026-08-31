@@ -28,6 +28,25 @@ Bean `DataSource` поднимает [`PodLoggerConfiguration`](../../podLogger.
 
 Query-сборка `LogQuery` живёт в `SqliteLogStoreRepository`, не в `PodLoggerService`. Publish/list Kubernetes Events этот пакет не делает. Прочитанный `PodLogDto.relevantEvents` = `null`.
 
+## Риски миграции
+
+| Риск | Симптом | Где смотреть | Решение |
+| --- | --- | --- | --- |
+| Ожидание, что SQLite-слой сам адаптируется к чужим DTO | схема мигрируется успешно, но в `log_entry` попадают не те значения или `null` | `store.md`, `parser/logParser.md`, `client/openshiftClient.md` | сначала зафиксировать состав полей `PodLogDto`, потом проверять SQLite |
+| Недоступен путь к файлу или права на каталог | fail-fast на создании DataSource или миграции схемы | `SqliteDataSourceFactory`, `SchemaMigrator`, `PodLoggerConfiguration` | смотреть resolved `storePath`, права на каталог, WAL |
+| Новая СУБД в банковском контуре | текущий JDBC/PRAGMA слой неприменим | `repository.md` | писать новую repository-реализацию, а не перегружать этот пакет |
+
+### Миграционный чек-лист
+
+1. Включить `DEBUG` для `com.example.podlogger.store.sqlite` и `com.example.podlogger`.
+2. Проверить логи `Creating pod logger DataSource`, `Opening SQLite DataSource`, `Starting SQLite schema migration`.
+3. Если schema поднялась, но данные не те, перейти в `store.md` и `parser/logParser.md`: причина почти наверняка выше по стеку.
+
+### Профит для агента в новом контуре
+
+- Этот раздел фиксирует ваш ожидаемый тезис: прямых рисков у SQLite немного, потому что библиотека сама контролирует схему и читает только свои поля.
+- Агент понимает, что SQLite здесь опосредована входным mapping: нужно знать, какие поля пришли и что именно сохраняется локально.
+
 ## Приёмка
 
 `PersistentLogStoreTest` бьёт в store API и тем самым в эти реализации (временный файл SQLite, не Docker). Карточка: [`PodLoggerJunitDemoTest.md`](../../../../../../../../../docs/PodLoggerJunitDemoTest.md) §3.
