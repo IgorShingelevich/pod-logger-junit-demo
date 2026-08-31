@@ -374,13 +374,13 @@ Do not:
 
 This repository already has known alignment cases that must be handled carefully:
 
-1. `docs/README.md` may exist in git history/HEAD while being absent in the working tree.
-2. The README `@PodLogger` block may be an API example, not the exact annotation used by `OrderErrorIT`.
+1. The project uses only root `README.md` as the shared entrypoint; references to `docs/README.md` should be treated as stale path/broken link cases, not as missing active canon.
+2. The README can intentionally show both the exact `OrderErrorIT` usage and the full `@PodLogger` API example; do not conflate those two layers.
 3. `PodLogger.java` includes `standDownEventCodes()` and `standDownMessagePatterns()`, which may be missing from shorter docs.
 4. `OpenshiftClientParseTest` has a method-level display name; do not assume it is class-level.
 5. `junit-pod-logger.md` may omit transfer-relevant structure such as `store.dto`, config or dependency nuances.
 6. `docs/PodLoggerJunitDemoTest.md` may contain session-specific Allure observations that are not asserted by code.
-7. `docs/PodLoggerJunitDemoCommands.md` may contain stale historical commands or session diary content.
+7. `docs/PodLoggerJunitDemoCommands.md` must remain a reusable command canon; if session diary content, absolute-path canon, or stale historical commands reappear, classify that as `C12`.
 8. `EventHandlingStrategies.md` and `EventHandling2Story.md` are target-state/reference, not as-built canon.
 9. `docs/propmtHistory/**` is non-canonical draft history.
 10. New MD files must be classified before they are treated as canon.

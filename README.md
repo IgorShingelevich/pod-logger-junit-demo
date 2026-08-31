@@ -19,7 +19,6 @@
 | [`docs/PodLoggerJunitDemoCommands.md`](docs/PodLoggerJunitDemoCommands.md) | Справочник команд по скопам (Test Commands и другие) |
 | [`docs/story/PersistentLogStoreStory/PersistentLogStoreStory.md`](docs/story/PersistentLogStoreStory/PersistentLogStoreStory.md) | SQLite store |
 | [`docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md`](docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md) | Events, health, fail-fast |
-| [`docs/README.md`](docs/README.md) | Оглавление docs |
 | [`demo-app/demo-app.md`](demo-app/demo-app.md) | SUT: API, JSON-stdout, Docker image |
 | [`demo-tests/demo-test.md`](demo-tests/demo-test.md) | K3s/Testcontainers, потребители `@PodLogger` |
 | [`junit-pod-logger/junit-pod-logger.md`](junit-pod-logger/junit-pod-logger.md) | Карта пакетов библиотеки, что переносить |
@@ -83,20 +82,36 @@ mvn -pl demo-tests io.qameta.allure:allure-maven:2.15.0:report
 
 ## Аннотация
 
+Фактическое использование в `demo-tests` (`OrderErrorIT`):
+
+```java
+@SpringBootTest(classes = DemoTestApplication.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@PodLogger(collectOnFailOnly = true)
+class OrderErrorIT {
+    // ...
+}
+```
+
+Полный API аннотации:
+
 ```java
 @PodLogger(collectOnFailOnly = true)   // Allure + SQLite логов только при fail
 @PodLogger(collectOnFailOnly = false)  // Allure + SQLite логов после каждого invocation
 @PodLogger(
     namespace = "default",
     podLabelSelector = "app=demo-api",
-    testRunName = "order-error-demo",
-    testSuiteName = "com.example.demotest.OrderErrorIT",
+    testRunName = "",
+    testSuiteName = "",
     environmentType = EnvironmentType.LOCAL,  // DEV | ST | FT | LOCAL
-    serviceType = "demo-api",
+    serviceType = "",
     publishLifecycleEvents = true,
     failFastOnStandDownEvent = true,
-    healthCheckUrl = "")
+    healthCheckUrl = "",
+    standDownEventCodes = {},
+    standDownMessagePatterns = {})
 ```
+
+Пустые строки и пустые массивы в полном примере означают «использовать дефолты библиотеки», а не значения из `OrderErrorIT`.
 
 Отдельного атрибута `persist` нет. Gate логов:
 

@@ -81,7 +81,7 @@
 
 **Файл:** `junit-pod-logger/src/test/java/com/example/podlogger/client/OpenshiftClientParseTest.java`  
 **Модуль:** `junit-pod-logger`. Docker: нет.  
-**Display name:** `проверка парсинга JSON строк и пропуска шумов`.
+**Display name метода:** `проверка парсинга JSON строк и пропуска шумов`.
 
 ### 1.1 `parsesJsonLinesAndSkipsNoise`
 
@@ -365,7 +365,7 @@ Unit-тестов нет. Приёмка артефакта:
 
 ---
 
-Команды прогона, Allure, SQLite, Docker/CTL и журнал сессии — в [`PodLoggerJunitDemoCommands.md`](PodLoggerJunitDemoCommands.md), раздел [Test Commands](PodLoggerJunitDemoCommands.md#test-commands).
+Команды прогона, Allure, SQLite и Docker/CTL — в [`PodLoggerJunitDemoCommands.md`](PodLoggerJunitDemoCommands.md), раздел [Test Commands](PodLoggerJunitDemoCommands.md#test-commands).
 
 ---
 

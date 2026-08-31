@@ -12,7 +12,6 @@ A file or canon role is expected by the docs system but is absent from the worki
 
 Typical cases:
 
-- `docs/README.md` referenced by canon but absent on disk;
 - required module map missing;
 - snapshot file missing when the skill expects an existing baseline.
 
@@ -143,9 +142,9 @@ When comparing a newly observed issue to the existing snapshot:
 
 ## Known local mappings
 
-- README `@PodLogger` block vs actual `OrderErrorIT` usage -> `stale operational example` plus `incomplete API coverage`
+- mixed README `@PodLogger` API/example layers without clear labeling -> `stale operational example` plus `incomplete API coverage`
 - `OpenshiftClientParseTest` display-name level mismatch -> `wrong test inventory`
 - `junit-pod-logger.md` missing transfer-relevant structure -> `incomplete API coverage`
 - session diary inside Commands -> `session artifact presented as canon`
 - target-state Event docs competing with as-built -> `target-state presented as as-built`
-- `docs/README.md` missing from working tree -> `missing canon`
+- stale references to removed `docs/README.md` -> `broken link`

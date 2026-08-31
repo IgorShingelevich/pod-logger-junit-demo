@@ -31,7 +31,6 @@
 | Каталог тестов | [`docs/PodLoggerJunitDemoTest.md`](PodLoggerJunitDemoTest.md) | есть |
 | Commons | [`docs/PodLoggerJunitDemoCommands.md`](PodLoggerJunitDemoCommands.md) | есть |
 | Операции | [`README.md`](../README.md) | есть |
-| Оглавление docs | `docs/README.md` | есть в git HEAD, отсутствует в рабочей копии |
 | Карта модуля | [`demo-app/demo-app.md`](../demo-app/demo-app.md) | есть |
 | Карта модуля | [`demo-tests/demo-test.md`](../demo-tests/demo-test.md) | есть |
 | Карта модуля | [`junit-pod-logger/junit-pod-logger.md`](../junit-pod-logger/junit-pod-logger.md) | есть |
@@ -59,6 +58,7 @@
 | `C6` | Локальный стенд | `ClusterLifecycle` использует `rancher/k3s:v1.31.5-k3s1`, `demo-api:local`, import образа и port-forward; это совпадает с `demo-test.md` и Test.md |
 | `C6` | Манифесты | `k8s/demo-api.yaml` и `demo-tests/src/test/resources/k8s/demo-api.yaml` содержат один и тот же Deployment/Service контракт: `app=demo-api`, `/health`, port `8080` |
 | `C1` | Набор тестовых классов | `OpenshiftClientParseTest`, `OpenshiftEventHandlingTest`, `PersistentLogStoreTest`, `InfrastructureLoggingTest`, `OrderErrorIT` отражены в Test.md |
+| `C1` | Parse test display name | `docs/PodLoggerJunitDemoTest.md` теперь явно фиксирует, что `проверка парсинга JSON строк и пропуска шумов` — display name метода, а не класса |
 | `C2` | Счётчики тестов | Test.md корректно фиксирует 1 parser test, 11 event tests, 14 store tests, 3 infra tests и 4 parameterized `OrderErrorIT` cases |
 | `C7` | CollectGate | `CollectGate.shouldCollect = !collectOnFailOnly \|\| failed` совпадает с PRD, README и story-документами |
 | `C7` | Fail-ветка `afterEach` | `PodLoggerService.handleFailedInvocation()` подтверждает порядок `getEvents -> attach events if non-empty -> probe -> collect logs -> persist only if available`; это согласовано с README и Event story |
@@ -66,6 +66,9 @@
 | `C8` | Версии | `fabric8.version=6.13.4` и `allure-maven=2.15.0` согласованы между POM и документацией |
 | `C9` | Jenkins | `Jenkinsfile` подтверждает build, docker build, `demo-tests` с `UNSTABLE`, Allure; это совпадает с README |
 | `C10` | Роли документов | PRD §9 и модульные MD согласованно разделяют устав, тестовый каталог, commands и карты модулей |
+| `C11` | Единая входная точка docs | Общим оглавлением проекта считается только корневой `README.md`; ссылки на `docs/README.md` больше не входят в активный канон |
+| `C12` | Commands commons hygiene | `PodLoggerJunitDemoCommands.md` теперь содержит только reusable команды по скопам; session diary, stale path и machine-specific canon убраны |
+| `C3` | README `@PodLogger` слои | README теперь отдельно показывает фактическое использование в `OrderErrorIT` и полный API аннотации, включая `standDownEventCodes` и `standDownMessagePatterns` |
 | `C14` | Target-state пометки | README и Test.md явно маркируют `EventHandlingStrategies.md` и `EventHandling2Story.md` как не-as-built |
 | `C16` | Skill support package | `.cursor/skills/docs-code-alignment/` теперь содержит `SKILL.md`, `references/*` и `templates/snapshot-section.md`; состав совпадает с story и не конкурирует с каноническими MD проекта |
 
@@ -75,32 +78,6 @@
 
 Ниже зафиксированы расхождения и некорреляции, обнаруженные ручной сверкой.  
 Каждый пункт имеет стабильный критерий, статус и короткий диагноз.
-
-### `F-001` — `C11` — missing canon on disk
-
-- **Статус:** `open`
-- **Категория:** `missing canon`
-- **Документный факт:** корневой README и другие канонические документы ссылаются на `docs/README.md` как на оглавление docs.
-- **Фактический факт:** `docs/README.md` присутствует в git HEAD, но отсутствует в рабочей копии.
-- **Почему это важно:** ссылка на карту канона бита в реальном состоянии дерева, поэтому читатель не получает полный вход в docs-набор.
-- **Поведение skill:** различать отсутствие на диске и отсутствие в HEAD, не считая файл «несуществующим вообще».
-
-### `F-002` — `C3` — README example is not the actual IT annotation
-
-- **Статус:** `open`
-- **Категория:** `stale operational example`
-- **Документный факт:** README показывает расширенный пример `@PodLogger(...)` с `testRunName`, `testSuiteName`, `environmentType`, `serviceType`, `publishLifecycleEvents`, `failFastOnStandDownEvent`, `healthCheckUrl`.
-- **Фактический факт:** `demo-tests/src/test/java/com/example/demotest/OrderErrorIT.java` использует только `@PodLogger(collectOnFailOnly = true)`.
-- **Дополнительный частный случай:** `PodLogger.java` содержит ещё `standDownEventCodes()` и `standDownMessagePatterns()`, но README их не показывает, тогда как PRD показывает.
-- **Почему это важно:** без явного различения «пример API» и «фактическое использование в IT» документ вводит в заблуждение, а API coverage в README остаётся неполным.
-
-### `F-003` — `C1` — parser display name mapped to the wrong level
-
-- **Статус:** `open`
-- **Категория:** `wrong test inventory`
-- **Документный факт:** Test.md описывает display name парсера как идентификатор тестового класса.
-- **Фактический факт:** у `OpenshiftClientParseTest` `@DisplayName` стоит на методе `parsesJsonLinesAndSkipsNoise`, а не на классе.
-- **Почему это важно:** skill должен сравнивать не только имена классов, но и реальное размещение JUnit-аннотаций.
 
 ### `F-004` — `C4` — incomplete transfer map for `junit-pod-logger`
 
@@ -117,14 +94,6 @@
 - **Документный факт:** Test.md содержит матрицу `OrderErrorIT` с конкретным распределением Allure Events/SQLite по кейсам как факт последнего прогона.
 - **Фактический факт:** `OrderErrorIT` в коде ассертит только HTTP 400 + `fail()`. Он не ассертит, что Events окажутся только у первого кейса или что snapshot Allure будет именно таким на любом прогоне.
 - **Почему это важно:** историческое наблюдение сессии нужно явно отделять от обязательного кода-контракта, иначе документ кажется более жёстким, чем тест.
-
-### `F-006` — `C12` — Commands commons contains session diary and stale paths
-
-- **Статус:** `open`
-- **Категория:** `session artifact presented as canon`
-- **Документный факт:** `PodLoggerJunitDemoCommands.md` должен быть commons-справочником по скопам.
-- **Фактический факт:** в нём присутствует развёрнутый журнал конкретной сессии, абсолютные локальные пути и команды по уже несуществующим путям вроде `docs/prd/...`.
-- **Почему это важно:** commons начинает смешивать канон команд и исторический лог, а stale path выглядит как часть актуального contract surface.
 
 ### `F-007` — `C14` — target-state Event docs are adjacent to as-built canon
 
@@ -146,8 +115,37 @@
 
 ## 5. Closed findings
 
-Пока пусто.  
-При следующих прогонах skill закрытые пункты должны оставаться в этом файле со статусом `closed` и короткой записью о том, что изменилось.
+### `F-001` — `C11` — missing canon on disk
+
+- **Статус:** `closed`
+- **Категория:** `broken link`
+- **Было:** активный канон и часть документов считали `docs/README.md` обязательным оглавлением docs, хотя в рабочей копии файла не было.
+- **Стало:** активный канон опирается только на корневой `README.md`; ссылки на `docs/README.md` убраны из уставных и support-документов skill.
+- **Что изменилось:** finding закрыт сменой правила канона, а не восстановлением старого файла.
+
+### `F-002` — `C3` — README example is not the actual IT annotation
+
+- **Статус:** `closed`
+- **Категория:** `stale operational example`
+- **Было:** README смешивал полный пример `@PodLogger(...)` и фактическое использование в `OrderErrorIT`, при этом не показывал `standDownEventCodes` и `standDownMessagePatterns`.
+- **Стало:** README отдельно показывает реальную аннотацию `OrderErrorIT` и полный API-пример `@PodLogger`, включая оба stand-down массива.
+- **Что изменилось:** finding закрыт явным разделением operational example и полного API слоя.
+
+### `F-003` — `C1` — parser display name mapped to the wrong level
+
+- **Статус:** `closed`
+- **Категория:** `wrong test inventory`
+- **Было:** Test.md описывал `проверка парсинга JSON строк и пропуска шумов` как display name тестового класса.
+- **Стало:** Test.md явно фиксирует, что это display name метода `parsesJsonLinesAndSkipsNoise`.
+- **Что изменилось:** finding закрыт точечной правкой каталога тестов без изменения исходного тестового кода.
+
+### `F-006` — `C12` — Commands commons contains session diary and stale paths
+
+- **Статус:** `closed`
+- **Категория:** `session artifact presented as canon`
+- **Было:** `PodLoggerJunitDemoCommands.md` смешивал reusable команды с развёрнутым журналом сессии, абсолютными локальными путями и историческими командами по уже несуществующим путям вроде `docs/prd/...`.
+- **Стало:** `PodLoggerJunitDemoCommands.md` оставляет только reusable команды по скопам из корня репозитория; session diary, stale path и ссылки на устаревшие документы удалены.
+- **Что изменилось:** finding закрыт чисткой commons до стабильного command canon и синхронизацией ссылок на него в связанных документах.
 
 ---
 

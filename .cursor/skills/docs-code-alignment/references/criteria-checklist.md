@@ -224,7 +224,7 @@ Check:
 
 Violation examples:
 
-- `docs/README.md` referenced but absent in working tree;
+- stale reference to removed `docs/README.md`;
 - stale path after rename;
 - file exists only historically.
 

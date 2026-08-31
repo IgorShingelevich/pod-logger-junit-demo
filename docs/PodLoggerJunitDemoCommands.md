@@ -4,11 +4,7 @@
 
 Каталог тестов (ожидания, приёмка, тонкости): [`PodLoggerJunitDemoTest.md`](PodLoggerJunitDemoTest.md).  
 PRD: [`PodLoggerJunitDemoPRD.md`](PodLoggerJunitDemoPRD.md).
-
-Репозиторий: `C:\Users\V\pod-logger-junit-demo`.  
-Рабочий Maven в сессии: `C:\Users\V\apache-maven-3.9.16`.  
-Путь `C:\Program Files\apache-maven-3.9.16-bin.zip` — zip, не `bin`.  
-`JAVA_HOME=C:\Program Files\Java\jdk-21`.
+Команды рассчитаны на запуск из корня репозитория. Если `mvn` недоступен из `PATH`, сначала проверь окружение в скопе `Environment`.
 
 Как пополнять: новая команда попадает в **свой скоп**. Если команда нужна и для теста, и для эксплуатации — ссылка из карточки теста сюда, дублировать тело не обязательно.
 
@@ -33,11 +29,12 @@ PRD: [`PodLoggerJunitDemoPRD.md`](PodLoggerJunitDemoPRD.md).
 
 ## Environment
 
-Команды проверки и настройки окружения. JDK: **17+** (`pom` `release=17`; в сессии был JDK 21).
+Команды проверки окружения. JDK: **17+** (`pom` `release=17`).
 
 ```powershell
 where.exe java
 where.exe mvn.cmd
+Get-Command mvn -ErrorAction SilentlyContinue
 mvn -version
 java -version
 Write-Output "JAVA_HOME=$env:JAVA_HOME"
@@ -47,20 +44,6 @@ Write-Output "POD_LOGGER_STORE_PATH=$env:POD_LOGGER_STORE_PATH"
 Write-Output "DOCKER_HOST=$env:DOCKER_HOST"
 Write-Output "TESTCONTAINERS_RYUK_DISABLED=$env:TESTCONTAINERS_RYUK_DISABLED"
 Get-ChildItem Env: | Where-Object { $_.Name -match 'JAVA|MAVEN|M2|DOCKER|POD_LOGGER|TESTCONTAINERS' }
-Get-Command mvn
-Get-ChildItem 'C:\Users\V\apache-maven-3.9.16\bin'
-Get-Item 'C:\Program Files\apache-maven-3.9.16-bin.zip'
-```
-
-Zip в Program Files — не runnable `bin`. Рабочий Maven: `C:\Users\V\apache-maven-3.9.16`.
-
-```powershell
-$dest = "C:\Users\V\apache-maven-3.9.16"
-if (Test-Path $dest) { Write-Host "Already extracted at $dest" } else {
-  Expand-Archive -LiteralPath "C:\Program Files\apache-maven-3.9.16-bin.zip" -DestinationPath "C:\Users\V" -Force
-}
-$env:PATH = "C:\Users\V\apache-maven-3.9.16\bin;$env:PATH"
-$env:JAVA_HOME = "C:\Program Files\Java\jdk-21"
 ```
 
 ---
@@ -137,27 +120,21 @@ mvn -pl demo-app -am package -DskipTests
 mvn -pl demo-tests -am test
 ```
 
-С явным PATH сессии (как в диалоге, пока Maven не был в PATH терминала):
-
-```powershell
-$env:PATH = "C:\Users\V\apache-maven-3.9.16\bin;$env:PATH"; $env:JAVA_HOME = "C:\Program Files\Java\jdk-21"; mvn -pl junit-pod-logger -am test
-$env:PATH = "C:\Users\V\apache-maven-3.9.16\bin;$env:PATH"; $env:JAVA_HOME = "C:\Program Files\Java\jdk-21"; mvn -pl demo-app -am package -DskipTests
-$env:PATH = "C:\Users\V\apache-maven-3.9.16\bin;$env:PATH"; $env:JAVA_HOME = "C:\Program Files\Java\jdk-21"; mvn -pl demo-tests -am test
-```
-
 ### Surefire / артефакты
 
 ```powershell
-Get-ChildItem -Recurse -Path 'C:\Users\V\pod-logger-junit-demo' -Filter 'TEST-*.xml' | Where-Object { $_.FullName -match '\\target\\surefire-reports\\' }
-Get-ChildItem 'C:\Users\V\pod-logger-junit-demo\demo-tests\target' | Format-Table Name,Length,Mode
+Get-ChildItem -Recurse -Filter 'TEST-*.xml' | Where-Object { $_.FullName -match '\\target\\surefire-reports\\' }
+Get-ChildItem 'demo-tests\target' | Format-Table Name,Length,Mode
 ```
 
-Разбор Surefire XML (как в диалоге):
+Разбор Surefire XML:
 
 ```powershell
-$reports = Get-ChildItem -Recurse -Path 'C:\Users\V\pod-logger-junit-demo' -Filter 'TEST-*.xml' | Where-Object { $_.FullName -match '\\target\\surefire-reports\\' }
+$repoRoot = (Resolve-Path '.').Path
+$reports = Get-ChildItem -Recurse -Filter 'TEST-*.xml' | Where-Object { $_.FullName -match '\\target\\surefire-reports\\' }
 foreach ($file in $reports) {
-  Write-Output "===== $($file.FullName.Replace('C:\Users\V\pod-logger-junit-demo\','')) ====="
+  $relative = $file.FullName.Replace($repoRoot + '\', '')
+  Write-Output "===== $relative ====="
   [xml]$xml = Get-Content $file.FullName
   $suite = $xml.testsuite
   Write-Output ("SUITE tests={0} failures={1} errors={2} skipped={3} time={4}s" -f $suite.tests, $suite.failures, $suite.errors, $suite.skipped, $suite.time)
@@ -171,65 +148,9 @@ foreach ($file in $reports) {
 }
 ```
 
-### Хронологический журнал команд диалога
-
-Полный список Shell-вызовов сессии проверки тестов (40), в порядке выполнения:
-
-1. `git status --short`
-2. `git diff` по тогдашним путям `docs/prd/...` и `docs/EventHandling.PRD.md` (сейчас этих файлов нет)
-3. повтор того же `git diff`
-4. `mvn -pl junit-pod-logger -am test` (ещё до PATH Maven — не сработал)
-5. `where.exe java`
-6. `where.exe mvn.cmd`
-7. поиск Maven в `C:\Program Files` (`Get-ChildItem` + zip)
-8. `Expand-Archive` zip → `C:\Users\V\apache-maven-3.9.16`
-9. PATH + `java -version` + `mvn -version` + `docker version` / `docker info`
-10. `mvn -pl junit-pod-logger -am test` (с PATH)
-11. `mvn -pl demo-app -am package -DskipTests`
-12. `mvn -pl demo-tests -am test`
-13. проверка persistence PATH (`Test-Path mvn.cmd`, user PATH, `where.exe mvn`)
-14. `mvn -pl demo-tests allure:report` — prefix не найден
-15. `mvn allure:report` из каталога `demo-tests` — prefix не найден
-16. `mvn -pl demo-tests io.qameta.allure:allure-maven:2.15.0:report` — SUCCESS
-17. запись Maven в PowerShell profile
-18. повторная проверка Maven zip vs PATH + env + `docker version` / `docker info`
-19. `mvn -version` + `Get-ChildItem` bin + `Get-Item` zip + `docker info` + `docker ps`
-20. `mvn -pl junit-pod-logger -am test`
-21. `mvn -pl demo-app -am package -DskipTests`
-22. `mvn -pl demo-tests -am test`
-23. разбор всех `TEST-*.xml` (Surefire)
-24. list `demo-tests/target`, `allure-results`, sqlite
-25. `Get-ChildItem demo-tests`, sqlite include, allure dirs
-26. counts `allure-results` + `junit-pod-logger/allure-results`
-27. `cmd /c dir /b ...\allure-results`
-28. parse всех `*-result.json` (status, attachments)
-29. latest result per test + `Get-Item` sqlite
-30. dump аттачей четырёх `OrderErrorIT` кейсов
-31. `python -c` sqlite3 inspect (`tables`, `test_run`, `log_entry`)
-32. повтор `mvn -pl demo-tests allure:report`
-33. `cmd /c dir` `.allure` / `allure.bat`
-34. `cmd /c dir` `.allure\allure-2.30.0\bin`
-35. `python ...\_inspect_store.py` (временный скрипт, удалён)
-36. `mvn -pl demo-tests io.qameta.allure:allure-maven:2.15.0:report`
-37. **list generated Allure Report:** `cmd /c dir /b ...\target\site\allure-maven-plugin`
-38. `python -m http.server 8765` в каталоге report
-39. `Invoke-WebRequest http://127.0.0.1:8765/`
-40. `curl.exe -s -o NUL -w "%{http_code}" http://127.0.0.1:8765/`
-
----
-
 ## Allure
 
-Команды Allure вне конкретного теста. Тело, которым в сессии собирали и открывали отчёт demo-tests, пока лежит здесь же (скоп отчётности).
-
-Prefix `allure:` из корня **не** резолвится:
-
-```powershell
-mvn -pl demo-tests allure:report
-# No plugin found for prefix 'allure'
-```
-
-Рабочая генерация:
+Команды Allure вне конкретного теста.
 
 ```powershell
 mvn -pl demo-tests io.qameta.allure:allure-maven:2.15.0:report
@@ -238,20 +159,16 @@ mvn -pl demo-tests io.qameta.allure:allure-maven:2.15.0:report
 List Allure results и generated report:
 
 ```powershell
-Get-ChildItem 'C:\Users\V\pod-logger-junit-demo\demo-tests\target\allure-results' | Group-Object Extension
-cmd /c "dir /b C:\Users\V\pod-logger-junit-demo\demo-tests\target\allure-results"
-cmd /c "dir /b C:\Users\V\pod-logger-junit-demo\demo-tests\.allure"
-cmd /c "dir /b C:\Users\V\pod-logger-junit-demo\demo-tests\.allure\allure-2.30.0"
-cmd /c "dir /b C:\Users\V\pod-logger-junit-demo\demo-tests\.allure\allure-2.30.0\bin"
-cmd /c "dir /s /b C:\Users\V\pod-logger-junit-demo\demo-tests\.allure\allure.bat"
-cmd /c "dir /b C:\Users\V\pod-logger-junit-demo\demo-tests\target\site\allure-maven-plugin"
-Get-ChildItem 'C:\Users\V\pod-logger-junit-demo' -Recurse -Directory -Filter 'allure-results'
+Get-ChildItem 'demo-tests\target\allure-results' | Group-Object Extension
+cmd /c "dir /b demo-tests\target\allure-results"
+cmd /c "dir /b demo-tests\target\site\allure-maven-plugin"
+Get-ChildItem -Recurse -Directory -Filter 'allure-results'
 ```
 
 Разбор `*-result.json` (аттачи по каждому тесту):
 
 ```powershell
-$resultsDir = 'C:\Users\V\pod-logger-junit-demo\demo-tests\target\allure-results'
+$resultsDir = 'demo-tests\target\allure-results'
 $files = Get-ChildItem $resultsDir -Filter '*-result.json'
 Write-Output "result.json count=$($files.Count)"
 foreach ($file in $files) {
@@ -264,7 +181,7 @@ foreach ($file in $files) {
 Открыть generated report по HTTP (из каталога report; `file://` JSON не грузит):
 
 ```powershell
-Set-Location 'C:\Users\V\pod-logger-junit-demo\demo-tests\target\site\allure-maven-plugin'
+Set-Location 'demo-tests\target\site\allure-maven-plugin'
 python -m http.server 8765
 curl.exe -s -o NUL -w "%{http_code}" http://127.0.0.1:8765/
 try { (Invoke-WebRequest -Uri 'http://127.0.0.1:8765/' -UseBasicParsing -TimeoutSec 5).StatusCode } catch { $_.Exception.Message }
@@ -279,12 +196,12 @@ try { (Invoke-WebRequest -Uri 'http://127.0.0.1:8765/' -UseBasicParsing -Timeout
 
 ## Store
 
-Команды осмотра SQLite store. Тело, которым смотрели `demo-tests/target/pod-logger-store.sqlite` после прогона, лежит здесь.
+Команды осмотра SQLite store.
 
 ```powershell
-Get-ChildItem -Recurse -Path 'C:\Users\V\pod-logger-junit-demo' -Include '*.sqlite','*.sqlite-wal','*.sqlite-shm'
-Get-Item 'C:\Users\V\pod-logger-junit-demo\demo-tests\target\pod-logger-store.sqlite' | Format-List FullName,Length,LastWriteTime
-python -c "import sqlite3; p=r'C:\Users\V\pod-logger-junit-demo\demo-tests\target\pod-logger-store.sqlite'; c=sqlite3.connect(p); print('tables', c.execute(\"SELECT name FROM sqlite_master WHERE type='table'\").fetchall()); print('runs', c.execute('select id,test_run_name,status,started_at,finished_at from test_run').fetchall()); print('log_count', c.execute('select count(*) from log_entry').fetchall()); print('logs_by_method', c.execute('select related_test_method, test_display_name, message, pod_name from log_entry order by timestamp').fetchall())"
+Get-ChildItem -Recurse -Include '*.sqlite','*.sqlite-wal','*.sqlite-shm'
+Get-Item 'demo-tests\target\pod-logger-store.sqlite' | Format-List FullName,Length,LastWriteTime
+python -c "import sqlite3; p=r'demo-tests\target\pod-logger-store.sqlite'; c=sqlite3.connect(p); print('tables', c.execute(\"SELECT name FROM sqlite_master WHERE type='table'\").fetchall()); print('runs', c.execute('select id,test_run_name,status,started_at,finished_at from test_run').fetchall()); print('log_count', c.execute('select count(*) from log_entry').fetchall()); print('logs_by_method', c.execute('select related_test_method, test_display_name, message, pod_name from log_entry order by timestamp').fetchall())"
 ```
 
 ---
@@ -307,25 +224,23 @@ git merge EventPolicy
 
 Зачем: перенести коммиты event-policy-ветки в главную. После merge `master` опережает `origin/master`; `git push` — отдельно, по явной просьбе.
 
-Сверка Event Handling в сессии (пути **на тот момент**; сейчас `docs/prd/` и `docs/EventHandling.PRD.md` не существуют):
+Сверка канонических MD и event-story:
 
 ```powershell
-git diff -- README.md docs/README.md docs/prd/OpenShiftEventHandlingPRD.md docs/prd/EventHandlingPRD.md docs/EventHandling.PRD.md
+git diff -- README.md docs/PodLoggerJunitDemoPRD.md docs/PodLoggerJunitDemoTest.md docs/PodLoggerJunitDemoCommands.md demo-app/demo-app.md demo-tests/demo-test.md junit-pod-logger/junit-pod-logger.md k8s/k8s.md docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md
+git diff -- docs/story/OpenShiftEventHandlingStory/
 ```
 
-Актуальные файлы: `docs/story/OpenShiftEventHandlingStory/`.
-
-Сверка канона MD с git HEAD и копий YAML (оглавление `docs/README.md` в HEAD есть, на диске может быть удалено):
+Сверка канона MD и копий YAML:
 
 ```powershell
 git diff --stat
 git ls-tree -r HEAD --name-only docs/
-git show HEAD:docs/README.md
 Get-ChildItem -Path . -Recurse -Filter '*.md' | Where-Object { $_.FullName -notmatch '\\target\\' } | ForEach-Object { $_.FullName.Replace((Get-Location).Path + '\','') }
 fc.exe /b k8s\demo-api.yaml demo-tests\src\test\resources\k8s\demo-api.yaml
 ```
 
-Зачем: список MD на диске vs дерево `docs/` в HEAD; бинарное сравнение двух копий манифеста.
+Зачем: список MD на диске и в каталоге `docs/`; бинарное сравнение двух копий манифеста.
 
 ---
 

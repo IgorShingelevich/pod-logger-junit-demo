@@ -12,7 +12,6 @@ Use this file as the stable map of which documents belong to the docs-code align
 | `docs/PodLoggerJunitDemoTest.md` | Global test catalog | test inventory, acceptance, verification, nuances, known issues | command bodies or operational command commons |
 | `docs/PodLoggerJunitDemoCommands.md` | Commands commons | reusable commands grouped by scope | acceptance criteria, session diary, stale historical canon |
 | `README.md` | Operational entrypoint | run flow, module overview, concise examples, Jenkins overview | full normative API surface or second PRD |
-| `docs/README.md` | Docs index | navigation across docs canon | hidden or silently absent canon |
 | `demo-app/demo-app.md` | Module map | SUT endpoints, logback, Docker image, jar expectations | second PRD or second test catalog |
 | `demo-tests/demo-test.md` | Module map | infra classes, K3s/Testcontainers, why `fail()` exists | full feature charter |
 | `junit-pod-logger/junit-pod-logger.md` | Module map | package map, transfer-relevant surface, key dependencies | operational demo runbook |
@@ -38,6 +37,6 @@ These files may be useful during analysis but must not outrank the as-built set:
 
 ## Known canon-sensitive cases
 
-1. `docs/README.md` may matter even if it is missing from the working tree because other canon docs still reference it.
+1. The project has one shared entrypoint: `README.md`. References to `docs/README.md` are stale and should be treated as `broken link`/`stale path`, not as missing canon.
 2. README examples may summarize API usage without mirroring a specific test class exactly.
-3. A file can be historically present in git but absent on disk; treat that as a liveness/alignment case, not as a non-issue.
+3. A file can be historically present in git but absent on disk; treat that as a liveness/alignment case only when the file is still part of the active canon.
