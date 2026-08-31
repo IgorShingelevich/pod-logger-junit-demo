@@ -71,7 +71,10 @@ docker build -t demo-api:local demo-app
 ```powershell
 mvn -DskipTests package
 mvn -pl demo-app -am package -DskipTests
+mvn -pl junit-pod-logger -am install -DskipTests
 ```
+
+Зачем: поставить библиотеку в локальный `.m2`, чтобы `mvn -pl demo-tests test` не гонял library-тесты повторно (на Windows повтор часто ловит lock `@TempDir`).
 
 ---
 
@@ -118,7 +121,10 @@ mvn -pl junit-pod-logger -am test -Dtest=OpenshiftEventHandlingTest
 mvn -pl junit-pod-logger -am test
 mvn -pl demo-app -am package -DskipTests
 mvn -pl demo-tests -am test
+mvn -pl demo-tests test
 ```
+
+`mvn -pl demo-tests test` без `-am` использует уже установленный `junit-pod-logger` и не перезапускает library Surefire.
 
 ### Surefire / артефакты
 

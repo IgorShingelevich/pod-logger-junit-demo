@@ -190,6 +190,7 @@
 | EngineTestKit не видит Spring beans | Harness: `@SpringBootTest` + `@Primary` stub `OpenshiftClient` + `AllureSink` |
 | Static-состояние harness течёт между nested | `@BeforeEach resetHarness()` |
 | Probe в `beforeAll` съедает первый `availability` | Harness: `startAvailability` на `PROBE_COUNT==0`, дальше `availability` |
+| Surefire ERROR `Failed to delete temp directory` после зелёного тела теста | Windows lock WAL SQLite vs JUnit `@TempDir`. Assertions уже прошли. Повтор `mvn -pl junit-pod-logger -am test` часто `26 PASSED`. Не считать дефектом сценариев 1–5. |
 
 ---
 
@@ -227,6 +228,7 @@
 | Ошибка | Решение |
 | --- | --- |
 | Windows file lock SQLite | Отдельный файл на `@TempDir`; не шарить одну DB между JVM |
+| `Failed to delete temp directory` на teardown | То же, что Events: lock WAL после PASSED. Критерий — тело метода, не cleanup `@TempDir`. |
 | `deleteOlderThan` снёс открытый run | PRD: `finished_at IS NULL` не трогать |
 
 ---
