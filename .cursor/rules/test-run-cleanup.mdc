@@ -1,0 +1,31 @@
+---
+description: >-
+  Before any Maven test run in this repo, explicitly decide whether to delete
+  previous run artifacts (Surefire, Allure, SQLite) for a clean picture.
+alwaysApply: true
+---
+
+# Test run: clean vs reuse
+
+Перед **любым** `mvn ... test` в этом репо — явно решить и кратко зафиксировать в ходе работы:
+
+| Вопрос | Действие |
+| --- | --- |
+| Нужна **чистая картина** (приёмка, Allure/SQLite/Surefire без смешения прогонов)? | Удалить артефакты прошлых прогонов (см. [`PodLoggerJunitDemoCommands.md` — Test Commands → Чистый прогон](../docs/PodLoggerJunitDemoCommands.md#test-commands)), затем Maven. |
+| Достаточно **быстрой перепроверки** одного класса, старые артефакты не мешают? | Можно не чистить; в ответе указать, что отчёты смешаны с прошлыми прогонами. |
+
+## Что чистить для «чистого» прогона
+
+- `demo-tests/target/allure-results/`
+- `demo-tests/target/surefire-reports/`
+- `demo-tests/target/site/allure-maven-plugin/` (если есть)
+- `demo-tests/target/pod-logger-store.sqlite` (+ `-wal`, `-shm`)
+- `junit-pod-logger/target/allure-results/`
+- `junit-pod-logger/target/surefire-reports/`
+
+Критерии приёмки и «что ожидать» — только в [`PodLoggerJunitDemoTest.md`](../docs/PodLoggerJunitDemoTest.md). Команды очистки — в [`PodLoggerJunitDemoCommands.md`](../docs/PodLoggerJunitDemoCommands.md).
+
+## Не считать дефектом
+
+- `OrderErrorIT`: 4 FAILED as designed → Maven `BUILD FAILURE` на `demo-tests` ожидаем.
+- Смешанные `allure-results` при пропуске очистки — артефакт процесса, не баг тестов.

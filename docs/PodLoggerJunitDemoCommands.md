@@ -126,6 +126,29 @@ mvn -pl demo-tests test
 
 `mvn -pl demo-tests test` без `-am` использует уже установленный `junit-pod-logger` и не перезапускает library Surefire.
 
+### Чистый прогон (удалить артефакты прошлых запусков)
+
+Перед приёмкой, разбором Allure/SQLite или когда нужна одна «свежая» картина — очистить каталоги отчётов и store demo-tests. Иначе `allure-results` и Surefire XML смешиваются с прошлыми прогонами.
+
+```powershell
+$cleanPaths = @(
+  'demo-tests\target\allure-results',
+  'demo-tests\target\surefire-reports',
+  'demo-tests\target\site\allure-maven-plugin',
+  'junit-pod-logger\target\allure-results',
+  'junit-pod-logger\target\surefire-reports'
+)
+foreach ($p in $cleanPaths) { if (Test-Path $p) { Remove-Item $p -Recurse -Force } }
+Remove-Item 'demo-tests\target\pod-logger-store.sqlite*' -Force -ErrorAction SilentlyContinue
+```
+
+Полный чистый прогон после очистки:
+
+```powershell
+mvn -pl demo-app -am package -DskipTests
+mvn -pl demo-tests -am test
+```
+
 ### Surefire / артефакты
 
 ```powershell
