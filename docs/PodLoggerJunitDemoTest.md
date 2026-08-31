@@ -12,7 +12,7 @@
 - Events as-built: [`story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md`](story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md)
 - Events target-state (не as-built): [`story/OpenShiftEventHandlingStory/EventHandlingStrategies.md`](story/OpenShiftEventHandlingStory/EventHandlingStrategies.md), [`story/OpenShiftEventHandlingStory/EventHandling2Story.md`](story/OpenShiftEventHandlingStory/EventHandling2Story.md)
 
-Модульные MD (специфика дерева, не второй каталог тестов): [`demo-tests/demo-test.md`](../demo-tests/demo-test.md), [`junit-pod-logger/junit-pod-logger.md`](../junit-pod-logger/junit-pod-logger.md), [`demo-app/demo-app.md`](../demo-app/demo-app.md), [`k8s/k8s.md`](../k8s/k8s.md).
+Модульные MD (специфика дерева, не второй каталог тестов): [`demo-tests/demo-test.md`](../demo-tests/demo-test.md), [`junit-pod-logger/junit-pod-logger.md`](../junit-pod-logger/junit-pod-logger.md) (пакетные карты — из этой карты модуля), [`demo-app/demo-app.md`](../demo-app/demo-app.md), [`k8s/k8s.md`](../k8s/k8s.md).
 
 ---
 
@@ -112,7 +112,7 @@
 
 ## 2. `OpenshiftEventHandlingTest`
 
-**Файл:** `junit-pod-logger/src/test/java/com/example/podlogger/OpenshiftEventHandlingTest.java`  
+**Файл:** `junit-pod-logger/src/test/java/com/example/podlogger/event/OpenshiftEventHandlingTest.java`  
 **Harness:** `OpenshiftEventHandlingHarness` (in-memory client, capturing `AllureSink`).  
 **Контракт:** [`OpenShiftEventHandlingStory.md`](story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md), сценарии 1–5. Docker: нет.  
 **Display name класса:** `OpenShift Event Handling Test`.
@@ -372,7 +372,6 @@ Unit-тестов нет. Приёмка артефакта:
 ## Ссылки
 
 - Операции: [`README.md`](../README.md)
-- Оглавление docs: [`README.md`](README.md)
 - Команды: [`PodLoggerJunitDemoCommands.md`](PodLoggerJunitDemoCommands.md)
 - Приёмка Events (сценарии 1–5): `OpenshiftEventHandlingTest`
 - Приёмка store: `PersistentLogStoreTest`

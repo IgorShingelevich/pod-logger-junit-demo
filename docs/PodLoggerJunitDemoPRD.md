@@ -155,3 +155,6 @@ mvn -pl demo-tests -am test
 | [`PodLoggerJunitDemoCommands.md`](PodLoggerJunitDemoCommands.md) | команды по скопам | критерии приёмки |
 | README | как запускать, аннотация, путь к БД, Jenkins | полный SQL, полный контракт хуков Events |
 | `demo-app.md` / `demo-test.md` / `junit-pod-logger.md` / `k8s.md` | специфика дерева модуля | второй каталог тестов, второй PRD |
+| Пакетные MD `junit-pod-logger` (`podLogger.md`, `openshiftClient.md`, `logParser.md`, `store.md`, `repository.md`, `sqlLite.md`, `allure.md`, `event.md`) | карта классов пакета, границы, указатель на приёмку | SQL-схема, полный контракт хуков, карточки тестов |
+
+Пакетные MD — дети [`junit-pod-logger.md`](../junit-pod-logger/junit-pod-logger.md), не отдельные уставы фич. Индекс и ссылки на них держит карта модуля. Fail-fast и probe остаются в Event story; [`event.md`](../junit-pod-logger/src/main/java/com/example/podlogger/event/event.md) — только matcher и константы кодов.

@@ -1,4 +1,4 @@
-package com.example.podlogger;
+package com.example.podlogger.event;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -32,11 +32,11 @@ import com.example.podlogger.event.PodEventReasons;
 import com.example.podlogger.event.StandDownEventMatcher;
 import com.example.podlogger.store.DefaultPodStoreService;
 import com.example.podlogger.store.DefaultTestRunStore;
-import com.example.podlogger.store.LogStoreRepository;
 import com.example.podlogger.store.PodStoreService;
 import com.example.podlogger.store.StorePathResolver;
-import com.example.podlogger.store.TestRunRepository;
 import com.example.podlogger.store.TestRunStore;
+import com.example.podlogger.store.repository.LogStoreRepository;
+import com.example.podlogger.store.repository.TestRunRepository;
 import com.example.podlogger.store.sqlite.SchemaMigrator;
 import com.example.podlogger.store.sqlite.SqliteDataSourceFactory;
 import com.example.podlogger.store.sqlite.SqliteLogStoreRepository;

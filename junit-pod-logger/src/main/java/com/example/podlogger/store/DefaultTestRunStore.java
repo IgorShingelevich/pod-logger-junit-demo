@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.example.podlogger.store.dto.TestRunDto;
+import com.example.podlogger.store.repository.TestRunRepository;
 
 import lombok.RequiredArgsConstructor;
 

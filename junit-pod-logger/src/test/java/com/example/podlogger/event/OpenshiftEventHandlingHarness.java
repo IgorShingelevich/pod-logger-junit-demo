@@ -1,4 +1,4 @@
-package com.example.podlogger;
+package com.example.podlogger.event;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -22,6 +22,8 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Primary;
 import org.springframework.test.annotation.DirtiesContext;
 
+import com.example.podlogger.PodLogger;
+import com.example.podlogger.PodLoggerProperties;
 import com.example.podlogger.allure.AllureSink;
 import com.example.podlogger.client.OpenshiftClient;
 import com.example.podlogger.client.PodAvailability;

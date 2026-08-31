@@ -1,4 +1,4 @@
-package com.example.podlogger.store;
+package com.example.podlogger.store.repository;
 
 import java.util.List;
 

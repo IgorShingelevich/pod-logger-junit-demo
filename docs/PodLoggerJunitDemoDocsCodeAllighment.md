@@ -1,7 +1,7 @@
 # Docs Code Allighment Snapshot
 
 **Статус:** updated snapshot.  
-**Источник:** обновлено skill `docs-code-alignment` после ручного baseline.  
+**Источник:** обновлено skill `docs-code-alignment` после наполнения [`event.md`](../junit-pod-logger/src/main/java/com/example/podlogger/event/event.md).  
 **Story фичи:** [`docs/story/DocsCodeAllighmentStory/DocsCodeAllighmentStory.md`](story/DocsCodeAllighmentStory/DocsCodeAllighmentStory.md).  
 **Главный устав проекта:** [`docs/PodLoggerJunitDemoPRD.md`](PodLoggerJunitDemoPRD.md).  
 
@@ -13,7 +13,7 @@
 ## 1. Контекст снимка
 
 - Снимок собран после локального fast-forward `EventPolicy` -> `master`.
-- Snapshot отражает состояние после первой реальной валидации skill.
+- Snapshot отражает состояние после первой реальной валидации skill и последующего появления пакетных MD в `junit-pod-logger`.
 - Если при следующем прогоне skill состояние не меняется, этот файл не должен переписываться заново.
 - Если состояние изменится, новые находки или закрытие старых должны фиксироваться в этом же файле.
 
@@ -33,8 +33,10 @@
 | Операции | [`README.md`](../README.md) | есть |
 | Карта модуля | [`demo-app/demo-app.md`](../demo-app/demo-app.md) | есть |
 | Карта модуля | [`demo-tests/demo-test.md`](../demo-tests/demo-test.md) | есть |
-| Карта модуля | [`junit-pod-logger/junit-pod-logger.md`](../junit-pod-logger/junit-pod-logger.md) | есть |
+| Карта модуля | [`junit-pod-logger/junit-pod-logger.md`](../junit-pod-logger/junit-pod-logger.md) | есть; индекс пакетных MD |
 | Карта модуля | [`k8s/k8s.md`](../k8s/k8s.md) | есть |
+| Пакетные карты (дети модуля) | `podLogger.md`, `openshiftClient.md`, `logParser.md`, `store.md`, `repository.md`, `sqlLite.md`, `allure.md`, `event.md` | есть; не отдельные уставы |
+| Snapshot | этот файл | есть |
 
 ### 2.2 Не-as-built материалы
 
@@ -65,12 +67,15 @@
 | `C7` | Пустой Events-аттач | документы верно говорят, что пустой `pod-events-*` не создаётся |
 | `C8` | Версии | `fabric8.version=6.13.4` и `allure-maven=2.15.0` согласованы между POM и документацией |
 | `C9` | Jenkins | `Jenkinsfile` подтверждает build, docker build, `demo-tests` с `UNSTABLE`, Allure; это совпадает с README |
-| `C10` | Роли документов | PRD §9 и модульные MD согласованно разделяют устав, тестовый каталог, commands и карты модулей |
+| `C10` | Роли документов | PRD §9 разделяет устав, story, каталог тестов, commands, README, карты модулей и пакетные MD `junit-pod-logger` как детей карты модуля |
+| `C10` | Пакетные MD не второй PRD | частные MD держат инвентарь классов и границы пакета; SQL, хуки Events и карточки тестов остаются в story / Test.md |
 | `C11` | Единая входная точка docs | Общим оглавлением проекта считается только корневой `README.md`; ссылки на `docs/README.md` больше не входят в активный канон |
 | `C12` | Commands commons hygiene | `PodLoggerJunitDemoCommands.md` теперь содержит только reusable команды по скопам; session diary, stale path и machine-specific canon убраны |
 | `C3` | README `@PodLogger` слои | README теперь отдельно показывает фактическое использование в `OrderErrorIT` и полный API аннотации, включая `standDownEventCodes` и `standDownMessagePatterns` |
+| `C4` | Карта переноса библиотеки | `junit-pod-logger.md` индексирует пакеты и зависимости; `store.dto`, `PodLoggerConfiguration`, optional `spring-boot-autoconfigure` и `sqlite-jdbc` 3.47.1.0 отражены в иерархии карт |
 | `C14` | Target-state пометки | README и Test.md явно маркируют `EventHandlingStrategies.md` и `EventHandling2Story.md` как не-as-built |
 | `C16` | Skill support package | `.cursor/skills/docs-code-alignment/` теперь содержит `SKILL.md`, `references/*` и `templates/snapshot-section.md`; состав совпадает с story и не конкурирует с каноническими MD проекта |
+| `C16` | Пакетные MD `junit-pod-logger` | восемь файлов классифицированы как дети модульной карты, включая [`event.md`](../junit-pod-logger/src/main/java/com/example/podlogger/event/event.md); fail-fast остаётся в Event story |
 
 ---
 
@@ -78,14 +83,6 @@
 
 Ниже зафиксированы расхождения и некорреляции, обнаруженные ручной сверкой.  
 Каждый пункт имеет стабильный критерий, статус и короткий диагноз.
-
-### `F-004` — `C4` — incomplete transfer map for `junit-pod-logger`
-
-- **Статус:** `open`
-- **Категория:** `incomplete API coverage`
-- **Документный факт:** `junit-pod-logger.md` даёт укрупнённую карту пакетов и зависимостей, достаточную только частично.
-- **Фактический факт:** модуль содержит как минимум дополнительные элементы, которые документ не отражает как часть реального переносимого слоя: `store.dto`, `PodLoggerConfiguration`, optional `spring-boot-autoconfigure`, а также реальные dependency nuances из POM.
-- **Почему это важно:** карта «что переносить» должна покрывать фактическую структуру библиотеки, иначе перенос в закрытый контур может быть выполнен по неполному списку.
 
 ### `F-005` — `C13` — session observation is presented too close to contract
 
@@ -147,14 +144,31 @@
 - **Стало:** `PodLoggerJunitDemoCommands.md` оставляет только reusable команды по скопам из корня репозитория; session diary, stale path и ссылки на устаревшие документы удалены.
 - **Что изменилось:** finding закрыт чисткой commons до стабильного command canon и синхронизацией ссылок на него в связанных документах.
 
+### `F-004` — `C4` — incomplete transfer map for `junit-pod-logger`
+
+- **Статус:** `closed`
+- **Категория:** `incomplete API coverage`
+- **Было:** `junit-pod-logger.md` скрывал `store.dto`, `PodLoggerConfiguration`, optional `spring-boot-autoconfigure` и нюансы POM.
+- **Стало:** карта модуля индексирует пакетные MD; `store.md` покрывает `store.dto`, `podLogger.md` — config, модульный MD — optional autoconfigure и `sqlite-jdbc` 3.47.1.0.
+- **Что изменилось:** finding закрыт наполнением пакетных карт и дополнением transfer-слоя, а не сменой кода библиотеки.
+
+### `F-009` — `C11` — stale path to `OpenshiftEventHandlingTest`
+
+- **Статус:** `closed`
+- **Категория:** `broken link`
+- **Было:** Test.md и README указывали `.../podlogger/OpenshiftEventHandlingTest.java`; класс лежит в пакете `event`.
+- **Стало:** оба документа ссылаются на `.../podlogger/event/OpenshiftEventHandlingTest.java`.
+- **Что изменилось:** finding закрыт правкой путей при согласовании пакетных MD с каталогом тестов.
+
 ---
 
 ## 6. Вывод по структуре MD-файлов
 
-1. Дополнительные модульные MD-файлы сейчас не нужны.
-2. `demo-up.md` как отдельный документ не требуется; его роль уже выполняет [`demo-app/demo-app.md`](../demo-app/demo-app.md).
-3. Канон уже разбит по правильным слоям: устав проекта, уставы фич, каталог тестов, commands commons, operational README и карты модулей.
-4. Основная проблема сейчас не в нехватке документов, а в точности их границ, полноте отдельных карт и чистоте snapshot/commons.
+1. Пакетные MD внутри `junit-pod-logger` нужны и уже есть: они дети [`junit-pod-logger.md`](../junit-pod-logger/junit-pod-logger.md), не вторые PRD.
+2. Устав проекта и уставы фич не выпотрошены: SQL, хуки Events и API store остаются в story; пакетные MD держат инвентарь классов и границы.
+3. `demo-up.md` как отдельный документ не требуется; его роль уже выполняет [`demo-app/demo-app.md`](../demo-app/demo-app.md).
+4. Пакет `event` теперь имеет [`event.md`](../junit-pod-logger/src/main/java/com/example/podlogger/event/event.md): matcher и константы кодов; abort прогона по-прежнему описывает Event story.
+5. Открытые проблемы теперь не в нехватке карт библиотеки, а в отделении session observation (`F-005`) и в соседстве target-state/prompt-history с as-built (`F-007`, `F-008`).
 
 ---
 
@@ -176,3 +190,4 @@
 - [`docs/PodLoggerJunitDemoTest.md`](PodLoggerJunitDemoTest.md)
 - [`docs/PodLoggerJunitDemoCommands.md`](PodLoggerJunitDemoCommands.md)
 - [`README.md`](../README.md)
+- [`junit-pod-logger/junit-pod-logger.md`](../junit-pod-logger/junit-pod-logger.md)

@@ -1,10 +1,11 @@
-package com.example.podlogger.store;
+package com.example.podlogger.store.repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.example.podlogger.store.EnvironmentType;
 import com.example.podlogger.store.dto.TestRunDto;
 
 /**

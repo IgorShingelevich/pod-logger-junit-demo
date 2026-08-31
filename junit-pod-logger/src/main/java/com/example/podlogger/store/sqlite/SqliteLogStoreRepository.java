@@ -15,9 +15,9 @@ import org.springframework.stereotype.Repository;
 import com.example.podlogger.client.PodLogDto;
 import com.example.podlogger.store.EnvironmentType;
 import com.example.podlogger.store.FingerprintUtil;
-import com.example.podlogger.store.LogStoreRepository;
 import com.example.podlogger.store.StoreTime;
 import com.example.podlogger.store.dto.LogQuery;
+import com.example.podlogger.store.repository.LogStoreRepository;
 
 import lombok.RequiredArgsConstructor;
 

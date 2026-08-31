@@ -8,6 +8,7 @@
 **Смежная фича:** [`PersistentLogStoreStory.md`](../PersistentLogStoreStory/PersistentLogStoreStory.md).  
 **Модуль:** `junit-pod-logger`  
 **Клиент:** fabric8 `openshift-client` **6.13.4** (`io.fabric8.openshift.client.OpenShiftClient`)  
+**Пакетные карты модуля** (не этот устав): [`podLogger.md`](../../../junit-pod-logger/src/main/java/com/example/podlogger/podLogger.md), [`openshiftClient.md`](../../../junit-pod-logger/src/main/java/com/example/podlogger/client/openshiftClient.md), [`event.md`](../../../junit-pod-logger/src/main/java/com/example/podlogger/event/event.md), [`allure.md`](../../../junit-pod-logger/src/main/java/com/example/podlogger/allure/allure.md).  
 
 Контракт ниже совпадает с кодом. Исторические черновики в `docs/propmtHistory` источником истины не являются.
 

@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import com.example.podlogger.client.PodLogDto;
 import com.example.podlogger.store.dto.LogQuery;
 import com.example.podlogger.store.dto.TestRunDto;
+import com.example.podlogger.store.repository.LogStoreRepository;
+import com.example.podlogger.store.repository.TestRunRepository;
 
 import lombok.RequiredArgsConstructor;
 

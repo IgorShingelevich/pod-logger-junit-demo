@@ -87,9 +87,11 @@ Skill читает уставные документы, code snapshot и код�
 | Операции | [`README.md`](../../../README.md) | запуск, общее описание, Jenkins, сокращённые примеры |
 | Карта модуля | [`demo-app/demo-app.md`](../../../demo-app/demo-app.md) | SUT-модуль |
 | Карта модуля | [`demo-tests/demo-test.md`](../../../demo-tests/demo-test.md) | тестовый модуль |
-| Карта модуля | [`junit-pod-logger/junit-pod-logger.md`](../../../junit-pod-logger/junit-pod-logger.md) | библиотека |
+| Карта модуля | [`junit-pod-logger/junit-pod-logger.md`](../../../junit-pod-logger/junit-pod-logger.md) | библиотека; индекс пакетных MD |
 | Карта модуля | [`k8s/k8s.md`](../../../k8s/k8s.md) | манифест и RBAC |
 | Snapshot | [`docs/PodLoggerJunitDemoDocsCodeAllighment.md`](../../PodLoggerJunitDemoDocsCodeAllighment.md) | текущее состояние выравнивания |
+
+Пакетные MD `junit-pod-logger` (`podLogger.md`, `openshiftClient.md`, `logParser.md`, `store.md`, `repository.md`, `sqlLite.md`, `allure.md`, `event.md`) — дети карты модуля, не отдельные уставы. Их роль: навигация по пакету. Норматив поведения остаётся в PRD и story.
 
 ### 4.2 Не-as-built материалы
 
@@ -167,7 +169,7 @@ Skill должен разделять:
 2. Пример аннотации в README может быть полнее, чем фактическая аннотация `OrderErrorIT`; skill должен отличать пример API от конкретного использования по `C3`.
 3. `PodLogger.java` содержит `standDownEventCodes()` и `standDownMessagePatterns()`; если документ их не отражает, это неполнота API по `C3`.
 4. Display name теста может быть на методе, а не на классе; skill сравнивает реальное расположение аннотаций, а не только имена классов (`C1`).
-5. `junit-pod-logger.md` может скрывать часть реальной структуры пакетов (`store.dto`, config, optional auto-config dependencies); это неполная карта переноса (`C4`).
+5. Карта переноса `junit-pod-logger`: модульный MD — индекс пакетных карт. `store.dto`, `PodLoggerConfiguration` и optional `spring-boot-autoconfigure` должны быть видны в этой иерархии; скрытие — неполнота `C4`.
 6. Таблица результатов Allure/SQLite по `OrderErrorIT` может быть историческим наблюдением прошлого прогона, а не контрактом кода (`C13`).
 7. `PodLoggerJunitDemoCommands.md` не должен содержать сессионный журнал, absolute-path canon или команды по неактуальным путям вроде `docs/prd/...`; при появлении таких фрагментов skill должен поднимать `C12`.
 8. `EventHandlingStrategies.md` и `EventHandling2Story.md` должны остаться target-state/reference и не конкурировать с as-built story (`C14`).

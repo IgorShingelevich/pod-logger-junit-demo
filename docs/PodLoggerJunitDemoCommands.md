@@ -231,6 +231,14 @@ git diff -- README.md docs/PodLoggerJunitDemoPRD.md docs/PodLoggerJunitDemoTest.
 git diff -- docs/story/OpenShiftEventHandlingStory/
 ```
 
+Сверка пакетных карт `junit-pod-logger` (дети модульного MD, не второй PRD):
+
+```powershell
+git diff -- junit-pod-logger/junit-pod-logger.md junit-pod-logger/src/main/java/com/example/podlogger/podLogger.md junit-pod-logger/src/main/java/com/example/podlogger/allure/allure.md junit-pod-logger/src/main/java/com/example/podlogger/client/openshiftClient.md junit-pod-logger/src/main/java/com/example/podlogger/event/event.md junit-pod-logger/src/main/java/com/example/podlogger/parser/logParser.md junit-pod-logger/src/main/java/com/example/podlogger/store/store.md junit-pod-logger/src/main/java/com/example/podlogger/store/repository/repository.md junit-pod-logger/src/main/java/com/example/podlogger/store/sqlite/sqlLite.md
+```
+
+Зачем: увидеть, изменилась ли карта модуля и пакетные MD вместе, без журнала сессии.
+
 Сверка канона MD и копий YAML:
 
 ```powershell

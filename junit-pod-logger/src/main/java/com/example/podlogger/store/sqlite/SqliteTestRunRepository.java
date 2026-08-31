@@ -16,8 +16,8 @@ import org.springframework.stereotype.Repository;
 
 import com.example.podlogger.store.EnvironmentType;
 import com.example.podlogger.store.StoreTime;
-import com.example.podlogger.store.TestRunRepository;
 import com.example.podlogger.store.dto.TestRunDto;
+import com.example.podlogger.store.repository.TestRunRepository;
 
 import lombok.RequiredArgsConstructor;
 

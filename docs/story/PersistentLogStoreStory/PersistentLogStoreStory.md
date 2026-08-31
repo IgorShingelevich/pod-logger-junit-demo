@@ -6,7 +6,8 @@
 **Каталог тестов:** [`docs/PodLoggerJunitDemoTest.md`](../../PodLoggerJunitDemoTest.md).  
 **Команды:** [`docs/PodLoggerJunitDemoCommands.md`](../../PodLoggerJunitDemoCommands.md).  
 **Смежная фича:** [`OpenShiftEventHandlingStory.md`](../OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md).  
-**База v1:** один файл SQLite, не дерево папок и не H2. Export JSON в v1 нет.
+**База v1:** один файл SQLite, не дерево папок и не H2. Export JSON в v1 нет.  
+**Пакетные карты модуля** (не этот устав): [`store.md`](../../../junit-pod-logger/src/main/java/com/example/podlogger/store/store.md), [`repository.md`](../../../junit-pod-logger/src/main/java/com/example/podlogger/store/repository/repository.md), [`sqlLite.md`](../../../junit-pod-logger/src/main/java/com/example/podlogger/store/sqlite/sqlLite.md).
 
 ---
 

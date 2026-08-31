@@ -21,7 +21,7 @@
 | [`docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md`](docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md) | Events, health, fail-fast |
 | [`demo-app/demo-app.md`](demo-app/demo-app.md) | SUT: API, JSON-stdout, Docker image |
 | [`demo-tests/demo-test.md`](demo-tests/demo-test.md) | K3s/Testcontainers, потребители `@PodLogger` |
-| [`junit-pod-logger/junit-pod-logger.md`](junit-pod-logger/junit-pod-logger.md) | Карта пакетов библиотеки, что переносить |
+| [`junit-pod-logger/junit-pod-logger.md`](junit-pod-logger/junit-pod-logger.md) | Карта модуля и ссылки на пакетные MD рядом с кодом |
 | [`k8s/k8s.md`](k8s/k8s.md) | Манифест демо, probes, RBAC |
 
 JavaDoc каждого класса и метода — в модуле `junit-pod-logger`.
@@ -56,7 +56,7 @@ mvn -pl junit-pod-logger -am test
 
 Приёмка store: [`PersistentLogStoreTest`](junit-pod-logger/src/test/java/com/example/podlogger/store/PersistentLogStoreTest.java) (display name **persistent log store test**).
 
-Приёмка Events: [`OpenshiftEventHandlingTest`](junit-pod-logger/src/test/java/com/example/podlogger/OpenshiftEventHandlingTest.java) (сценарии 1–5, кластер не нужен).
+Приёмка Events: [`OpenshiftEventHandlingTest`](junit-pod-logger/src/test/java/com/example/podlogger/event/OpenshiftEventHandlingTest.java) (сценарии 1–5, кластер не нужен).
 
 Полное демо с подой (нужен Docker Desktop). Сначала пакет `demo-app` (jar для Dockerfile), затем тесты:
 
