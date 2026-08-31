@@ -300,7 +300,7 @@ Parameterized: `UNKNOWN_SKU`, `OUT_OF_STOCK`, `PAYMENT_DECLINED`, `USER_BLOCKED`
 2. Тело: `code` и `message` совпадают с таблицей API.
 3. Затем **обязательный** `Assertions.fail(...)` — иначе при `collectOnFailOnly=true` не будет Allure/SQLite логов.
 4. Maven Surefire помечает кейс **FAILED**. Это **единственный** ожидаемый статус кейса.
-5. `@PodLogger` afterEach: `getEvents(window)` → Allure Events **если список непустой** → probe → логи окна → persist если под available.
+5. `@PodLogger` afterEach: `getEvents(window)` → probe → Allure Events **если список непустой** → логи окна → persist если под available.
 
 ### Критерии приёмки по кодам
 
@@ -354,16 +354,18 @@ Unit-тестов нет. Приёмка артефакта:
 
 ---
 
-## Матрица «тест → артефакты» (факт последнего полного прогона диалога)
+## Матрица «тест → артефакты» (операционное наблюдение, не жёсткий контракт)
+
+Эта матрица фиксирует пример последнего полного прогона и помогает быстро читать артефакты. Она не подменяет критерии приёмки выше: конкретное распределение `pod-events-*` по кейсам зависит от окна invocation и фактических Events кластера.
 
 | Тест | Surefire | Allure logs | Allure events | SQLite |
 | --- | --- | --- | --- | --- |
 | Parse / EventHandling / PersistentLogStore | 26 PASSED | harness sink, не demo report | — | TempDir |
 | Infra step 1–3 | 3 PASSED | нет | нет | нет (нет @PodLogger) |
 | OrderErrorIT UNKNOWN_SKU | FAILED designed | да | да (`TestRunStarted` в окне) | да |
-| OrderErrorIT OUT_OF_STOCK | FAILED designed | да | нет (пустое окно) | да |
-| OrderErrorIT PAYMENT_DECLINED | FAILED designed | да | нет | да |
-| OrderErrorIT USER_BLOCKED | FAILED designed | да | нет | да |
+| OrderErrorIT OUT_OF_STOCK | FAILED designed | да | в этом прогоне нет | да |
+| OrderErrorIT PAYMENT_DECLINED | FAILED designed | да | в этом прогоне нет | да |
+| OrderErrorIT USER_BLOCKED | FAILED designed | да | в этом прогоне нет | да |
 
 ---
 

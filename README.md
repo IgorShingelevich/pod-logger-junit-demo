@@ -31,6 +31,129 @@ JavaDoc каждого класса и метода — в модуле `junit-p
 - [`docs/story/OpenShiftEventHandlingStory/EventHandlingStrategies.md`](docs/story/OpenShiftEventHandlingStory/EventHandlingStrategies.md) — forward-looking guide по возможной эволюции event management; не заменяет текущий as-built контракт.
 - [`docs/story/OpenShiftEventHandlingStory/EventHandling2Story.md`](docs/story/OpenShiftEventHandlingStory/EventHandling2Story.md) — расширенная версия того же guide; использовать как reference для следующей итерации.
 
+## Карта MD-файлов
+
+Эта секция нужна как навигационная карта: от корневого канона и story-документов до модульных и package-level MD. Источник истины по ролям документов остаётся в [`docs/PodLoggerJunitDemoPRD.md`](docs/PodLoggerJunitDemoPRD.md) и в [`docs/PodLoggerJunitDemoDocsCodeAllighment.md`](docs/PodLoggerJunitDemoDocsCodeAllighment.md).
+
+```mermaid
+flowchart TD
+    readme["README.md"]
+    prd["docs/PodLoggerJunitDemoPRD.md"]
+    testDoc["docs/PodLoggerJunitDemoTest.md"]
+    commandsDoc["docs/PodLoggerJunitDemoCommands.md"]
+    snapshot["docs/PodLoggerJunitDemoDocsCodeAllighment.md"]
+
+    storeStory["docs/story/PersistentLogStoreStory/PersistentLogStoreStory.md"]
+    eventStory["docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md"]
+    strategyRef["docs/story/OpenShiftEventHandlingStory/EventHandlingStrategies.md"]
+    eventRef["docs/story/OpenShiftEventHandlingStory/EventHandling2Story.md"]
+    alignStory["docs/story/DocsCodeAllighmentStory/DocsCodeAllighmentStory.md"]
+
+    demoApp["demo-app/demo-app.md"]
+    demoTests["demo-tests/demo-test.md"]
+    library["junit-pod-logger/junit-pod-logger.md"]
+    k8sDoc["k8s/k8s.md"]
+
+    rootPkg["junit-pod-logger/.../podLogger.md"]
+    clientPkg["junit-pod-logger/.../client/openshiftClient.md"]
+    parserPkg["junit-pod-logger/.../parser/logParser.md"]
+    storePkg["junit-pod-logger/.../store/store.md"]
+    repoPkg["junit-pod-logger/.../store/repository/repository.md"]
+    sqlitePkg["junit-pod-logger/.../store/sqlite/sqlLite.md"]
+    allurePkg["junit-pod-logger/.../allure/allure.md"]
+    eventPkg["junit-pod-logger/.../event/event.md"]
+
+    readme --> prd
+    readme --> testDoc
+    readme --> commandsDoc
+    readme --> snapshot
+    prd --> storeStory
+    prd --> eventStory
+    prd --> demoApp
+    prd --> demoTests
+    prd --> library
+    prd --> k8sDoc
+    library --> rootPkg
+    library --> clientPkg
+    library --> parserPkg
+    library --> storePkg
+    library --> repoPkg
+    library --> sqlitePkg
+    library --> allurePkg
+    library --> eventPkg
+    readme --> strategyRef
+    readme --> eventRef
+    readme --> alignStory
+```
+
+<details open>
+<summary><strong>Уровень 1. Корневой канон</strong></summary>
+
+- [`README.md`](README.md) — единая точка входа, run flow, модульный обзор, Jenkins, навигация по MD.
+- [`docs/PodLoggerJunitDemoPRD.md`](docs/PodLoggerJunitDemoPRD.md) — главный устав проекта и симметрия документов.
+- [`docs/PodLoggerJunitDemoTest.md`](docs/PodLoggerJunitDemoTest.md) — глобальный каталог тестов, критерии приёмки и проверки.
+- [`docs/PodLoggerJunitDemoCommands.md`](docs/PodLoggerJunitDemoCommands.md) — reusable команды по скопам.
+- [`docs/PodLoggerJunitDemoDocsCodeAllighment.md`](docs/PodLoggerJunitDemoDocsCodeAllighment.md) — snapshot согласованности docs↔code, не поведенческий устав.
+
+</details>
+
+<details>
+<summary><strong>Уровень 2. Story-документы</strong></summary>
+
+<details open>
+<summary><strong>As-built canon</strong></summary>
+
+- [`docs/story/PersistentLogStoreStory/PersistentLogStoreStory.md`](docs/story/PersistentLogStoreStory/PersistentLogStoreStory.md) — устав persistent store и SQLite.
+- [`docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md`](docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md) — lifecycle Events, health, fail-fast, `relevantEvents`.
+
+</details>
+
+<details>
+<summary><strong>Reference / target-state / meta</strong></summary>
+
+- [`docs/story/OpenShiftEventHandlingStory/EventHandlingStrategies.md`](docs/story/OpenShiftEventHandlingStory/EventHandlingStrategies.md) — reference, не as-built canon.
+- [`docs/story/OpenShiftEventHandlingStory/EventHandling2Story.md`](docs/story/OpenShiftEventHandlingStory/EventHandling2Story.md) — расширенный target-state reference, не as-built canon.
+- [`docs/story/DocsCodeAllighmentStory/DocsCodeAllighmentStory.md`](docs/story/DocsCodeAllighmentStory/DocsCodeAllighmentStory.md) — story для skill `docs-code-alignment`, не runtime-контракт приложения.
+
+</details>
+
+</details>
+
+<details>
+<summary><strong>Уровень 3. Карты модулей</strong></summary>
+
+- [`demo-app/demo-app.md`](demo-app/demo-app.md) — контракт SUT, logback, Docker image, jar.
+- [`demo-tests/demo-test.md`](demo-tests/demo-test.md) — K3s/Testcontainers, consumer-side wiring, почему `OrderErrorIT` красный.
+- [`junit-pod-logger/junit-pod-logger.md`](junit-pod-logger/junit-pod-logger.md) — карта переносимой библиотеки и индекс package-level MD.
+- [`k8s/k8s.md`](k8s/k8s.md) — manifest, probes, RBAC, копия YAML.
+
+</details>
+
+<details>
+<summary><strong>Уровень 4. Package-level карты `junit-pod-logger`</strong></summary>
+
+<details open>
+<summary><strong>Корневой пакет `com.example.podlogger`</strong></summary>
+
+- [`junit-pod-logger/src/main/java/com/example/podlogger/podLogger.md`](junit-pod-logger/src/main/java/com/example/podlogger/podLogger.md)
+
+</details>
+
+<details>
+<summary><strong>Подпакеты</strong></summary>
+
+- [`junit-pod-logger/src/main/java/com/example/podlogger/client/openshiftClient.md`](junit-pod-logger/src/main/java/com/example/podlogger/client/openshiftClient.md)
+- [`junit-pod-logger/src/main/java/com/example/podlogger/parser/logParser.md`](junit-pod-logger/src/main/java/com/example/podlogger/parser/logParser.md)
+- [`junit-pod-logger/src/main/java/com/example/podlogger/store/store.md`](junit-pod-logger/src/main/java/com/example/podlogger/store/store.md)
+- [`junit-pod-logger/src/main/java/com/example/podlogger/store/repository/repository.md`](junit-pod-logger/src/main/java/com/example/podlogger/store/repository/repository.md)
+- [`junit-pod-logger/src/main/java/com/example/podlogger/store/sqlite/sqlLite.md`](junit-pod-logger/src/main/java/com/example/podlogger/store/sqlite/sqlLite.md)
+- [`junit-pod-logger/src/main/java/com/example/podlogger/allure/allure.md`](junit-pod-logger/src/main/java/com/example/podlogger/allure/allure.md)
+- [`junit-pod-logger/src/main/java/com/example/podlogger/event/event.md`](junit-pod-logger/src/main/java/com/example/podlogger/event/event.md)
+
+</details>
+
+</details>
+
 ## Требования
 
 - JDK 17+ (компиляция `release=17`; прогон на JDK 21 допустим)
@@ -124,7 +247,7 @@ shouldCollect = !collectOnFailOnly || failed
 `PodLoggerService` в `afterEach`:
 
 1. passed → `attachLogsIfNeeded` (CollectGate) без Events;
-2. failed → `getEvents(window)` → Allure Events если непусто → `probePodAvailability` → логи окна: persist только если под доступна; Allure логов — если под доступна или хвост лога непустой.
+2. failed → `getEvents(window)` → `probePodAvailability` → Allure Events если список непустой → логи окна: persist только если под доступна; Allure логов — если под доступна или хвост лога непустой.
 
 Ошибки save/Allure **глотаются** (тест не краснеет из‑за store). Ошибка `startTestRun` в `beforeAll` — **fail-fast** с пошаговым SLF4J-логом.
 

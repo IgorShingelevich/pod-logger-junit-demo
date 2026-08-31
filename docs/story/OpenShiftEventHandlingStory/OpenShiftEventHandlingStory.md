@@ -400,7 +400,7 @@ rules:
 9. **`PodLoggerService`:**
    - `publishTestRunStarted(testRunId, name, suite)`
    - `publishTestRunFinished(name, total, passed, failed)`
-   - `handleFailedInvocation(...)`: getEvents(window) → relevantEvents → attachEvents → health/availability → persist/logs attach по таблице §6.7 → вернуть `PodAvailability` в extension
+   - `handleFailedInvocation(...)`: getEvents(window) → health/availability → attachEvents (если `events != empty`) → relevantEvents на логах окна → persist/logs attach по таблице §6.7 → вернуть `PodAvailability` в extension
    - `attachLogsIfNeeded` не вызывать вслепую из extension; extension зовёт новый метод, который внутри для passed оставляет старый CollectGate-путь без Events.
 10. **`PodLoggerExtension`:** хуки строго по §4; счётчики TestWatcher; `STAND_UNAVAILABLE` в Store; `beforeEach` abort; `beforeAll` порядок start→publish Started→isPodAvailable.
 11. **Fingerprint / SQLite:** убедиться, что `relevantEvents` не в fingerprint и не в INSERT. Существующие `PersistentLogStoreTest` зелёные.

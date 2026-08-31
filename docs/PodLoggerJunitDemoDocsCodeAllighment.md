@@ -1,7 +1,7 @@
 # Docs Code Allighment Snapshot
 
 **Статус:** updated snapshot.  
-**Источник:** обновлено skill `docs-code-alignment` после наполнения [`event.md`](../junit-pod-logger/src/main/java/com/example/podlogger/event/event.md).  
+**Источник:** обновлено skill `docs-code-alignment` после повторной валидации MD-карт, README-навигации и fail-fast docs.  
 **Story фичи:** [`docs/story/DocsCodeAllighmentStory/DocsCodeAllighmentStory.md`](story/DocsCodeAllighmentStory/DocsCodeAllighmentStory.md).  
 **Главный устав проекта:** [`docs/PodLoggerJunitDemoPRD.md`](PodLoggerJunitDemoPRD.md).  
 
@@ -63,7 +63,7 @@
 | `C1` | Parse test display name | `docs/PodLoggerJunitDemoTest.md` теперь явно фиксирует, что `проверка парсинга JSON строк и пропуска шумов` — display name метода, а не класса |
 | `C2` | Счётчики тестов | Test.md корректно фиксирует 1 parser test, 11 event tests, 14 store tests, 3 infra tests и 4 parameterized `OrderErrorIT` cases |
 | `C7` | CollectGate | `CollectGate.shouldCollect = !collectOnFailOnly \|\| failed` совпадает с PRD, README и story-документами |
-| `C7` | Fail-ветка `afterEach` | `PodLoggerService.handleFailedInvocation()` подтверждает порядок `getEvents -> attach events if non-empty -> probe -> collect logs -> persist only if available`; это согласовано с README и Event story |
+| `C7` | Fail-ветка `afterEach` | `PodLoggerService.handleFailedInvocation()` подтверждает порядок `getEvents -> probe availability -> attach events if non-empty -> collect logs -> persist only if available`; это согласовано с README, Test.md и Event story |
 | `C7` | Пустой Events-аттач | документы верно говорят, что пустой `pod-events-*` не создаётся |
 | `C8` | Версии | `fabric8.version=6.13.4` и `allure-maven=2.15.0` согласованы между POM и документацией |
 | `C9` | Jenkins | `Jenkinsfile` подтверждает build, docker build, `demo-tests` с `UNSTABLE`, Allure; это совпадает с README |
@@ -76,6 +76,7 @@
 | `C14` | Target-state пометки | README и Test.md явно маркируют `EventHandlingStrategies.md` и `EventHandling2Story.md` как не-as-built |
 | `C16` | Skill support package | `.cursor/skills/docs-code-alignment/` теперь содержит `SKILL.md`, `references/*` и `templates/snapshot-section.md`; состав совпадает с story и не конкурирует с каноническими MD проекта |
 | `C16` | Пакетные MD `junit-pod-logger` | восемь файлов классифицированы как дети модульной карты, включая [`event.md`](../junit-pod-logger/src/main/java/com/example/podlogger/event/event.md); fail-fast остаётся в Event story |
+| `C11` | README карта MD-файлов | `README.md` теперь содержит отдельную секцию с архитектурной картой и вложенными `<details>`, показывающими путь от root canon до story, module maps и package-level MD |
 
 ---
 
@@ -83,14 +84,6 @@
 
 Ниже зафиксированы расхождения и некорреляции, обнаруженные ручной сверкой.  
 Каждый пункт имеет стабильный критерий, статус и короткий диагноз.
-
-### `F-005` — `C13` — session observation is presented too close to contract
-
-- **Статус:** `open`
-- **Категория:** `session artifact presented as canon`
-- **Документный факт:** Test.md содержит матрицу `OrderErrorIT` с конкретным распределением Allure Events/SQLite по кейсам как факт последнего прогона.
-- **Фактический факт:** `OrderErrorIT` в коде ассертит только HTTP 400 + `fail()`. Он не ассертит, что Events окажутся только у первого кейса или что snapshot Allure будет именно таким на любом прогоне.
-- **Почему это важно:** историческое наблюдение сессии нужно явно отделять от обязательного кода-контракта, иначе документ кажется более жёстким, чем тест.
 
 ### `F-007` — `C14` — target-state Event docs are adjacent to as-built canon
 
@@ -160,6 +153,22 @@
 - **Стало:** оба документа ссылаются на `.../podlogger/event/OpenshiftEventHandlingTest.java`.
 - **Что изменилось:** finding закрыт правкой путей при согласовании пакетных MD с каталогом тестов.
 
+### `F-005` — `C13` — session observation is presented too close to contract
+
+- **Статус:** `closed`
+- **Категория:** `session artifact presented as canon`
+- **Было:** Test.md содержал матрицу `OrderErrorIT` с конкретным распределением Allure Events по кейсам без достаточно явного отделения от обязательного кода-контракта.
+- **Стало:** матрица теперь явно помечена как `операционное наблюдение, не жёсткий контракт`, а строки без Events сформулированы как факт конкретного прогона.
+- **Что изменилось:** finding закрыт уточнением статуса наблюдения без изменения тестового кода.
+
+### `F-010` — `C7` — fail-path step order drifted in docs
+
+- **Статус:** `closed`
+- **Категория:** `duplicated authority`
+- **Было:** часть docs ставила `attachEvents` перед `probePodAvailability`, тогда как код `PodLoggerService.handleFailedInvocation()` и основной fail-path story шли в порядке `getEvents -> probe -> attach events`.
+- **Стало:** `README.md`, `docs/PodLoggerJunitDemoTest.md` и checklist в `docs/story/OpenShiftEventHandlingStory/OpenShiftEventHandlingStory.md` приведены к одному as-built порядку.
+- **Что изменилось:** finding закрыт синхронизацией fail-path описания между кодом, root README, Test.md и Event story.
+
 ---
 
 ## 6. Вывод по структуре MD-файлов
@@ -168,7 +177,7 @@
 2. Устав проекта и уставы фич не выпотрошены: SQL, хуки Events и API store остаются в story; пакетные MD держат инвентарь классов и границы.
 3. `demo-up.md` как отдельный документ не требуется; его роль уже выполняет [`demo-app/demo-app.md`](../demo-app/demo-app.md).
 4. Пакет `event` теперь имеет [`event.md`](../junit-pod-logger/src/main/java/com/example/podlogger/event/event.md): matcher и константы кодов; abort прогона по-прежнему описывает Event story.
-5. Открытые проблемы теперь не в нехватке карт библиотеки, а в отделении session observation (`F-005`) и в соседстве target-state/prompt-history с as-built (`F-007`, `F-008`).
+5. Открытые проблемы теперь не в нехватке карт библиотеки, а в соседстве target-state/prompt-history с as-built (`F-007`, `F-008`).
 
 ---
 

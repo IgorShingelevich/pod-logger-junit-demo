@@ -250,18 +250,9 @@ python -c "import sqlite3; p=r'demo-tests\target\pod-logger-store.sqlite'; c=sql
 ```powershell
 git status --short
 git branch -vv
-git log --oneline master..EventPolicy
-git log --oneline EventPolicy..master
+git log --oneline -10
+git diff --stat
 ```
-
-Влить `EventPolicy` в локальный `master` (fast-forward, если `master` не ушёл вперёд):
-
-```powershell
-git checkout master
-git merge EventPolicy
-```
-
-Зачем: перенести коммиты event-policy-ветки в главную. После merge `master` опережает `origin/master`; `git push` — отдельно, по явной просьбе.
 
 Сверка канонических MD и event-story:
 
